@@ -1,0 +1,25 @@
+# LaTeX build files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+
+# Confidential material never goes into git
+confidential/
+
+# Claude Code: personal settings stay local; .claude/settings.json is shared
+.claude/settings.local.json
+
+# OS and editor files
+.DS_Store
+.vscode/

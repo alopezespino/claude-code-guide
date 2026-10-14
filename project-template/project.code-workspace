@@ -1,0 +1,46 @@
+{
+  // One workspace file per project: open it with
+  //   code <project>/<project>.code-workspace
+  "folders": [{ "path": "." }],
+  "settings": {
+    // A distinct title-bar color per project, so you always know which
+    // window you are typing in. Pick a different color for each project.
+    "workbench.colorCustomizations": {
+      "titleBar.activeBackground": "#2E5E4E",
+      "titleBar.activeForeground": "#FFFFFF"
+    },
+
+    // Claude edits files on disk; auto-save avoids conflicts with unsaved
+    // changes in the editor.
+    "files.autoSave": "afterDelay",
+
+    // LaTeX: build with latexmk (it runs biber/bibtex as needed).
+    "latex-workshop.latex.recipes": [
+      { "name": "latexmk (lualatex)", "tools": ["latexmk-lualatex"] }
+    ],
+    "latex-workshop.latex.tools": [
+      {
+        "name": "latexmk-lualatex",
+        "command": "latexmk",
+        "args": [
+          "-lualatex",
+          "-synctex=1",
+          "-interaction=nonstopmode",
+          "-file-line-error",
+          "%DOC%"
+        ]
+      }
+    ],
+    "latex-workshop.latex.autoClean.run": "never"
+
+    // If the project runs code, point the editor at the project's
+    // environment, for example:
+    // "python.defaultInterpreterPath": "~/micromamba/envs/PROJECT_NAME/bin/python"
+  },
+  "extensions": {
+    "recommendations": [
+      "james-yu.latex-workshop",
+      "anthropic.claude-code"
+    ]
+  }
+}
