@@ -12,7 +12,6 @@ fi
 
 repo=$(cd "$(dirname "$0")/.." && pwd)
 target=$1
-name=$(basename "$target")
 
 if [ -e "$target" ] && [ -n "$(ls -A "$target" 2>/dev/null)" ]; then
   echo "Stopped: $target exists and is not empty." >&2
@@ -21,12 +20,16 @@ if [ -e "$target" ] && [ -n "$(ls -A "$target" 2>/dev/null)" ]; then
 fi
 
 mkdir -p "$target"
+target=$(cd "$target" && pwd)
+name=$(basename "$target")
+# Escape the characters sed treats specially in a replacement.
+name_sed=$(printf '%s' "$name" | sed 's/[&/\\]/\\&/g')
 cp -R "$repo/project-template/." "$target/"
 mv "$target/project.code-workspace" "$target/$name.code-workspace"
 
 # Fill in the project name in the templates (BSD sed on macOS).
 for f in CLAUDE.md README.md "$name.code-workspace"; do
-  sed -i '' "s/PROJECT_NAME/$name/g" "$target/$f"
+  sed -i '' "s/PROJECT_NAME/$name_sed/g" "$target/$f"
 done
 
 git -C "$target" init --quiet
@@ -35,4 +38,4 @@ target_abs=$(cd "$target" && pwd)
 echo "Created $target_abs"
 echo "Next:"
 echo "  code $target_abs/$name.code-workspace"
-echo "  then, in the VS Code terminal: claude, and /init"
+echo "  then, in the VS Code terminal: claude, and the built-in /init"

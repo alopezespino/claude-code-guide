@@ -2,6 +2,10 @@
 description: Bring the task's notes up to date before /clear or the end of a session
 ---
 
+> Example command from
+> [claude-code-guide](https://github.com/alopezespino/claude-code-guide),
+> not built into Claude Code. Edit this file to change what the command does.
+
 Wrap up the current task so that a fresh session can resume from files alone.
 
 1. Identify the notes file of the task we worked on (`notes/<task>.md`). If it is not

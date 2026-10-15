@@ -3,11 +3,21 @@ description: Keep one canonical copy of each shared script and sync it to its pr
 argument-hint: [consolidate | deploy | sync | check] [template] [paths...]
 ---
 
+> Example command from
+> [claude-code-guide](https://github.com/alopezespino/claude-code-guide),
+> not built into Claude Code. Edit this file to change what the command does.
+
 Manage the shared scripts kept as templates in the coordination repo: $ARGUMENTS
 
-Prerequisites: a git repo that holds the canonical copies, here `~/coordination` (change
-this path everywhere below if yours differs), with a `templates/` folder in it; and git
-in every project that receives a copy.
+Prerequisites: a git repo that holds the canonical copies, with a `templates/` folder in
+it; and git in every project that receives a copy. The repo's path is the one my
+`~/.claude/CLAUDE.md` names on a line "Coordination repo for the example `/press`
+command: <path>"; if there is no such line, it is `~/coordination`. Below,
+`~/coordination` stands for that path.
+
+First run: if the repo, `templates/` or `templates/press.yaml` does not exist, say so
+and offer to create them (`git init`, a manifest holding `templates: {}`, and a first
+commit). Create nothing without my approval.
 
 ## Layout
 
@@ -104,7 +114,8 @@ Report drift without changing anything. Compare each file of each copy and class
   like a fix worth merging into the canonical;
 - **missing**: the project, the destination folder or a listed file does not exist.
 
-End with one line per template giving the count in each class.
+Skip the files listed in a copy's `ignore`. End with one line per template giving the
+count in each class.
 
 ## Rules
 

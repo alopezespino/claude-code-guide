@@ -3,6 +3,10 @@ description: Open a notes file for a new task and agree on what "done" means
 argument-hint: <short task description>
 ---
 
+> Example command from
+> [claude-code-guide](https://github.com/alopezespino/claude-code-guide),
+> not built into Claude Code. Edit this file to change what the command does.
+
 Start a new task: $ARGUMENTS
 
 1. Choose a short lowercase-hyphen slug for the task. If `notes/<slug>.md` already

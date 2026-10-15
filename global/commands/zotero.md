@@ -3,13 +3,18 @@ description: Manage a Zotero library via the Web API (add, update, clean, dedup,
 argument-hint: <add|meta|papers|clean|dedup|attach|tags> [args] [--group <name>]
 ---
 
+> Example command from
+> [claude-code-guide](https://github.com/alopezespino/claude-code-guide),
+> not built into Claude Code. Edit this file to change what the command does.
+
 Run the Zotero task `$ARGUMENTS`. If no subcommand is given, infer it from my request;
 ask only if it is ambiguous.
 
 Prerequisites (once):
 
 ```bash
-python3 -m pip install pyzotero bibtexparser requests
+python3 -m venv ~/.venvs/zotero
+~/.venvs/zotero/bin/pip install pyzotero bibtexparser requests
 security add-generic-password -a "$USER" -s zotero_api_key -w
 security add-generic-password -a "$USER" -s zotero_user_id -w
 ```
@@ -21,8 +26,9 @@ use); that page also shows your numeric user id. Better BibTeX is optional.
 ## Access
 
 1. Use the Zotero Web API v3 through `pyzotero` (or curl with the headers
-   `Zotero-API-Key` and `Zotero-API-Version: 3`). Write helper scripts to a temporary
-   folder, not into the project.
+   `Zotero-API-Key` and `Zotero-API-Version: 3`). Run helper scripts with
+   `~/.venvs/zotero/bin/python` (or the interpreter CLAUDE.md names), and write them to
+   a temporary folder, not into the project.
 2. Read the key and the id inside the script at the moment of use:
    `security find-generic-password -s zotero_api_key -w` (same for `zotero_user_id`).
    Never print them, log them, or write them to any file.
@@ -95,11 +101,12 @@ search the project folder (`find . -name "*.bib"`); never search the whole disk.
    entry's `file` field). In a folder, count files by the `.pdf` extension only, never
    by a "pdf" substring.
 2. Find open copies through OpenAlex (`https://api.openalex.org/works/doi:<DOI>`), then
-   Unpaywall (`https://api.unpaywall.org/v2/<DOI>?email=<your email>`), preferring a
+   Unpaywall (`https://api.unpaywall.org/v2/<DOI>?email=<email>`; ask me for the email once), preferring a
    `publishedVersion` PDF. Keep a download only if the file starts with `%PDF-`.
 3. Never overwrite an existing PDF attachment. Keep the old one and rename its title
    with a version suffix: `_wp<year>`, `_published`, `_slides`, `_appendix`.
-4. Queue paywalled items in `notes/zotero-downloads.md` (create it if missing): a
+4. Queue paywalled items in the download queue named in CLAUDE.md, default
+   `notes/zotero-downloads.md` (create the file and its folder if missing): a
    Pending and a Completed table with citation key, DOI, title, link and date. The link
    is `https://doi.org/<DOI>`, through your library's proxy, if it has one. One row per
    DOI. Keep table rows contiguous: a blank line after the header breaks the table.

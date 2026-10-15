@@ -3,6 +3,10 @@ description: Summarize an academic paper into LaTeX working notes, one folder pe
 argument-hint: <paper.pdf> | <folder> | revise [<Key>]
 ---
 
+> Example command from
+> [claude-code-guide](https://github.com/alopezespino/claude-code-guide),
+> not built into Claude Code. Edit this file to change what the command does.
+
 Summarize into LaTeX working notes: $ARGUMENTS
 
 Prerequisites (macOS, once). marker turns PDFs into Markdown with equations in LaTeX;
@@ -15,11 +19,15 @@ micromamba create -y -c conda-forge -p ~/micromamba/envs/marker python=3.11
 ~/micromamba/envs/marker/bin/pip install marker-pdf
 ```
 
+Any environment name or install method works (a venv, `pipx install marker-pdf`): put
+the resulting `marker_single` path in the project's CLAUDE.md.
+
 Settings come from the project's CLAUDE.md (default in brackets): the bibliography file
 [`refs.bib`], exported from the reference manager and never edited by you; the
 literature folder, `<lit>` below [`litrev/`]; the converter command
 [`~/micromamba/envs/marker/bin/marker_single`]; an optional summary template. The "Paper
-summaries" section of `style/writing-style.md` wins where it differs from this command.
+summaries" section of `style/writing-style.md`, if the file exists, wins where it differs
+from this command.
 
 Arguments: a PDF; a folder, which must be `<lit>` (every PDF directly in it; confirm the
 list with me first); nothing (same as `<lit>`); or `revise` (see the end).
@@ -32,8 +40,8 @@ list with me first); nothing (same as `<lit>`); or `revise` (see the end).
    provisional key in the style of the existing keys and flag it. Never add a local bib.
 3. If `<lit>/<Key>/<Key>_summary.tex` exists, do not overwrite it: skip, offer `revise`.
 4. Create `<lit>/<Key>/images/` and move the PDF to `<lit>/<Key>/<Key>.pdf`.
-5. For context, read the Big Picture of two or three existing summaries, the project's
-   README and CLAUDE.md (model, notation), and search the project for `<Key>` to see
+5. For context, read the Big Picture of two or three existing summaries (if there are
+   none yet, skip this), the project's README and CLAUDE.md (model, notation), and search the project for `<Key>` to see
    where and why it cites the paper. The annotations must speak to those uses.
 
 ## 2. Read the paper as Markdown, not as page images
@@ -42,7 +50,7 @@ A page read as an image costs about 1,750 tokens, and its math is read from a bi
 Convert once; the cache is keyed on the PDF's contents, so a rerun is instant:
 
 ```bash
-conv="$HOME/micromamba/envs/marker/bin/marker_single"  # or CLAUDE.md's
+conv="$HOME/micromamba/envs/marker/bin/marker_single"  # CLAUDE.md's, if set
 pdf="<lit>/<Key>/<Key>.pdf"
 out="$HOME/.cache/papersummarize/$(shasum -a 256 "$pdf" | cut -c1-16)"
 ls "$out"/*/*.md 2>/dev/null ||

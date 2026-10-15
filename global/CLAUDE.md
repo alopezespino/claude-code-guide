@@ -24,15 +24,15 @@ the same mistake happens. Delete rules that no longer earn their place.
   "improve" anything else, and ask before touching files outside the request.
 - In LaTeX, never change notation, labels or citation keys unless asked. Compile after
   editing and report the warnings that remain.
-- Before editing a file, check whether I have unsaved changes open in the editor; if in
-  doubt, ask me to save first.
+- I keep auto-save on in the editor. If a file changed on disk in a way you did not
+  expect, stop and ask before editing it.
 
 ## Safety
 
 - Never use `rm`. Move files to the Trash with `trash <path>` so they can be recovered.
   Before deleting anything, show a table (file, size, reason) and wait for my approval.
-  Origin: (example) an `rm -rf` on a staging folder permanently deleted figures that
-  other files still used.
+  Origin: (invented example) an `rm -rf` on the wrong folder deleted a draft that had no
+  other copy.
 - Before any `git push`, show a table of the commits being pushed and wait for approval.
 - Never read, print or copy secrets (passwords, API tokens, keys). Store them in the
   macOS Keychain, never in files in a repo.
@@ -70,3 +70,4 @@ the same mistake happens. Delete rules that no longer earn their place.
 - Writing style: follow `style/writing-style.md` in the project, if there is one.
 - Punctuation and spelling: (for example, American spelling; no em dashes).
 - Dates: YYYY-MM-DD in file names and notes.
+- Coordination repo for the example `/press` command: `~/coordination`.

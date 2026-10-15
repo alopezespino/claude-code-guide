@@ -3,6 +3,10 @@ description: Compile a LaTeX file, fix errors and warnings, repeat until clean
 argument-hint: <file.tex>
 ---
 
+> Example command from
+> [claude-code-guide](https://github.com/alopezespino/claude-code-guide),
+> not built into Claude Code. Edit this file to change what the command does.
+
 Compile `$ARGUMENTS`. If no file is given, use the main file named in the project's
 CLAUDE.md.
 

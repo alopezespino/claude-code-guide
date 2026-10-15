@@ -3,6 +3,10 @@ description: Turn a meeting recording into a transcript, a summary and GitHub is
 argument-hint: <audio file | --resume file.cache.json>
 ---
 
+> Example command from
+> [claude-code-guide](https://github.com/alopezespino/claude-code-guide),
+> not built into Claude Code. Edit this file to change what the command does.
+
 Process the meeting recording `$ARGUMENTS` with
 [debriefr](https://github.com/alopezespino/debriefr). If no file is given, list the
 audio files in the project root and in `inbox/`, and ask me which one.
@@ -18,6 +22,7 @@ pip install -e '.[mlx]'  # local Whisper, Apple Silicon; '.[local]' elsewhere
 hf auth login            # paste a Hugging Face Read token
 security add-generic-password -a "$USER" -s anthropic_api_key -w
 gh auth login            # only for the GitHub sync
+gh auth refresh -s project  # Project boards need this extra scope
 ```
 
 - ffmpeg comes with debriefr (imageio-ffmpeg); there is nothing else to install.
@@ -55,7 +60,7 @@ Rules for every run:
        bio: Coauthor, writes the model.
        github: null
    default_participants: [Alex, Sam]
-   cleanup: archive-all       # moves audio and transcripts to .audio-archive/
+   cleanup: archive-all       # keeps only the summary; audio, .txt, .json go to .audio-archive/
    github:                    # omit to stop after the summary
      repo: owner/repo
      project: null            # Project v2 number, set in step 8
@@ -69,7 +74,8 @@ Rules for every run:
    debriefr transcribe <audio> [--participants Alex Sam] [--language es]
    ```
    For a transcript review or a summary written here, add
-   `--no-summary --cleanup archive-audio`, so the transcript stays in `transcript_dir`
+   `--no-summary --cleanup archive-audio` (a review always skips the API summary; step 6
+   then writes it here), so the transcript stays in `transcript_dir`
    instead of moving to `.audio-archive/` (pruned after 7 days).
 4. If it stops with `status: needs_sampling`, some speakers have no voiceprint. It saved
    one clip of about 45 s per unknown speaker (`samples/SPEAKER_XX.wav`) and a cache
@@ -112,7 +118,7 @@ Rules for every run:
    is `null`, offer to create the board, then write its number into `project.yaml`
    (iteration fields can only be added in the browser):
    ```bash
-   debriefr sync-issues --setup --title "myproject action items"
+   debriefr sync-issues --setup --title "<name> action items"  # name from project.yaml
    ```
    Then dry-run, show me the plan, and wait for my approval:
    ```bash

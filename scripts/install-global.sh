@@ -20,6 +20,7 @@ install_file() {
     skipped=$((skipped + 1))
   else
     cp "$src/$rel" "$dest/$rel"
+    case $rel in hooks/*.sh) chmod +x "$dest/$rel" ;; esac
     echo "  copied   ~/.claude/$rel"
   fi
 }
@@ -29,7 +30,6 @@ install_file settings.json
 for f in "$src"/hooks/*.sh; do
   install_file "hooks/$(basename "$f")"
 done
-chmod +x "$dest"/hooks/*.sh
 for f in "$src"/commands/*.md; do
   install_file "commands/$(basename "$f")"
 done
