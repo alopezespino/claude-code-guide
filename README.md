@@ -647,7 +647,12 @@ repository (linked), and which are tools of mine that this repository does not i
    version: [`global/commands/debrief.md`](global/commands/debrief.md).
 3. **Checking on research assistants.** I coordinate research assistants through
    GitHub issues: one issue per task, with a due date and a checklist of steps, and a
-   folder in the repository where the assistant pushes the work. A slash command of mine
+   folder in the repository where the assistant pushes the work. That repository is a
+   separate one for the assistants, parallel to the main project repository: it holds
+   only their task folders, the inputs each task needs and the work they hand back. The
+   assistants never change the main repository, each one sees only what the task needs,
+   and every change they make sits in one small place that I review before bringing it
+   into the project. A slash command of mine
    ([`/ra-check`](global/commands/ra-check.md)) reads the open issues, their comments and
    the commits to each task's folder, and prints each issue as on track, watch or nudge,
    with a nudge list and the comments that tag me and still have no reply. It changes
