@@ -23,6 +23,7 @@ Example entries for a LaTeX paper: replace them with this project's real files.
 | `figures/` | Generated figures; do not edit by hand |
 | `refs.bib` | Bibliography, exported from the reference manager; do not edit (blocked in `.claude/settings.json`; delete that rule if you edit it by hand) |
 | `notes/` | Task files (`notes/<task>.md`) and the lessons log |
+| `litrev/` | One folder per paper summary; the standard is `litrev/GUIDELINES.md` |
 | `style/writing-style.md` | Writing rules; follow them for any prose |
 | `confidential/` | Never read. Blocked in `.claude/settings.json` |
 

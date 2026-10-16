@@ -27,7 +27,8 @@ Settings come from the project's CLAUDE.md (default in brackets): the bibliograp
 literature folder, `<lit>` below [`litrev/`]; the converter command
 [`~/micromamba/envs/marker/bin/marker_single`]; an optional summary template. The "Paper
 summaries" section of `style/writing-style.md`, if the file exists, wins where it differs
-from this command.
+from this command; `<lit>/GUIDELINES.md`, if it exists, is the standard for every summary
+and wins over both.
 
 Arguments: a PDF; a folder, which must be `<lit>` (every PDF directly in it; confirm the
 list with me first); nothing (same as `<lit>`); or `revise` (see the end).

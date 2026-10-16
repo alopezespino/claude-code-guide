@@ -22,6 +22,8 @@ them. One section per document type; each has its own rules.
 
 ## Paper summaries
 
+- Standard: `litrev/GUIDELINES.md` (structure, annotations, checklist); add here only
+  rules it does not cover.
 - Structure: (for example, question; data; method; main result; why it matters to me).
 - Length: (for example, one page).
 - Rules: (for example, quote key definitions with page numbers).
