@@ -1,11 +1,19 @@
 # Claude Code + VS Code: a setup that keeps Claude focused
 
+**What this guide assumes.** You use Claude in the chat app and want to move to Claude
+Code. You can work in a terminal (move between folders, run a command, read its
+output), use git and GitHub (commit, push, pull), and open and edit files in VS Code.
+Writing R, Python or LaTeX helps with some examples but is not required. If you need a
+refresher on VS Code, the terminal, R or Python, or want a more basic setup of Claude
+Code first, start with [codingCS](https://github.com/alopezespino/codingCS) and come
+back here.
+
 > **Made and tested for macOS.** The install commands (Homebrew), the hooks (macOS
 > notifications, `trash`) and the key storage (the macOS Keychain) assume a Mac. The
 > working method in Parts 2 to 4 applies on any system, but on Linux or Windows the
 > commands and example files need changes.
 
-A step-by-step guide for researchers who want to move from Claude's chat app to Claude Code and are comfortable with git, VS Code and a terminal. It works with any programming language; examples use LaTeX where they help. The setup needs only the tools and files of Part 1, made by hand; the subsequent parts and the files in this repository are optional examples of my own preferences.
+A step-by-step guide for researchers who want to move from Claude's chat app to Claude Code. It works with any programming language; examples use LaTeX where they help. The setup needs only the tools and files of Part 1, made by hand; the subsequent parts and the files in this repository are optional examples of my own preferences.
 
 **Why this fixes "Claude goes off track."** In chat, the only context is the
 conversation, and it drifts as the conversation grows. In Claude Code the context is files
