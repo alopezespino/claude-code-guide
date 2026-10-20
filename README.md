@@ -1,5 +1,11 @@
 # Claude Code + VS Code: a setup that keeps Claude focused
 
+**Unsure about AI in your work?** If you are not sure whether to bring AI into your
+workflow, how to use it and still keep control, integrity and authorship of your work,
+or whether it will get in the way of your own learning, read
+[Using AI as a Coding Companion](https://github.com/alopezespino/codingCS/blob/main/AI-TOOLS.md)
+first.
+
 **What this guide assumes.** You use Claude in the chat app and want to move to Claude
 Code. You can work in a terminal (move between folders, run a command, read its
 output), use git and GitHub (commit, push, pull), and open and edit files in VS Code.
