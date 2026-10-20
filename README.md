@@ -1,12 +1,14 @@
 # Claude Code + VS Code: a setup that keeps Claude focused
 
-**Unsure about AI in your work?** If you are not sure whether to bring AI into your
+### Unsure about AI in your work?
+If you are not sure whether to bring AI into your
 workflow, how to use it and still keep control, integrity and authorship of your work,
 or whether it will get in the way of your own learning, read
 [Using AI as a Coding Companion](https://github.com/alopezespino/codingCS/blob/main/AI-TOOLS.md)
 first.
 
-**What this guide assumes.** You use Claude in the chat app and want to move to Claude
+### What this guide assumes.
+You use Claude in the chat app and want to move to Claude
 Code. You can work in a terminal (move between folders, run a command, read its
 output), use git and GitHub (commit, push, pull), and open and edit files in VS Code.
 Writing R, Python or LaTeX helps with some examples but is not required. If you need a
@@ -21,16 +23,19 @@ back here.
 
 A step-by-step guide for researchers who want to move from Claude's chat app to Claude Code. It works with any programming language; examples use LaTeX where they help. The setup needs only the tools and files of Part 1, made by hand; the subsequent parts and the files in this repository are optional examples of my own preferences.
 
-**Why this fixes "Claude goes off track."** In chat, the only context is the
+### Why this fixes "Claude goes off track."
+In chat, the only context is the
 conversation, and it drifts as the conversation grows. In Claude Code the context is files
 on disk: the repo, written rules, and a notes file per task, all re-read every session.
 Everything below makes that context explicit.
 
-**If you do only five things:** one repo per project with Claude running in its terminal;
+### If you do only five things:
+one repo per project with Claude running in its terminal;
 a `CLAUDE.md` in the repo; a global `CLAUDE.md` with your own rules; one task per session;
 a notes file per task.
 
-**Built into Claude Code, or mine.** Claude Code comes with its own slash commands
+### Built into Claude Code, or mine.
+Claude Code comes with its own slash commands
 (`/init`, `/clear`, `/compact` and others), keys (Shift+Tab, Esc Esc) and features
 (permissions, hooks, custom slash commands, memory, subagents). Everything in this
 repository is mine: slash commands, hooks, scripts and templates I wrote for my own work,
