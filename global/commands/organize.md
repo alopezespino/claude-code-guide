@@ -275,8 +275,8 @@ Past periods are ignored.
 
 ## Unattended runs
 
-When the prompt says the run is unattended (for example the scheduled morning job in
-`examples/morning-plan/`), nobody can answer questions:
+When the prompt says the run is unattended (for example a scheduled morning job), nobody
+can answer questions:
 
 - ask nothing; where a mode would ask, state the assumption made;
 - edit no files; print the plan to standard output only;
