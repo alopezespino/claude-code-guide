@@ -3,7 +3,7 @@
 ## Unsure about AI in your work?
 If you are not sure whether to bring AI into your
 workflow, how to use it and still keep control, integrity and authorship of your work,
-or whether it will get in the way of your own learning, read
+or whether it will get in the way of your own learning, read [codingCS](https://github.com/alopezespino/codingCS)'s section
 [Using AI as a Coding Companion](https://github.com/alopezespino/codingCS/blob/main/AI-TOOLS.md)
 first.
 
