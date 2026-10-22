@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Example from claude-code-guide
+  (https://github.com/alopezespino/claude-code-guide), not part of Claude Code.
+
+  launchd template for run-morning-plan.sh. Replace each placeholder __SCRIPT_DIR__, __PROJECT_DIR__,
+  __CLAUDE_BIN__ and __HOME__ with an absolute path (launchd does not
+  expand ~ or $HOME), then copy this file to ~/Library/LaunchAgents/. See README.md.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.example.morning-plan</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__SCRIPT_DIR__/run-morning-plan.sh</string>
+  </array>
+
+  <!-- Settings passed to the script. Values here override its defaults. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PROJECT_DIR</key>
+    <string>__PROJECT_DIR__</string>
+    <key>CLAUDE_BIN</key>
+    <string>__CLAUDE_BIN__</string>
+  </dict>
+
+  <!-- Weekdays (Monday=1 to Friday=5) at 08:50. Edit Hour and Minute. -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>50</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>50</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>50</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>50</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>50</integer></dict>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>__PROJECT_DIR__</string>
+
+  <!-- Anything the script itself does not log (for example a launch error). -->
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/morning-plan/launchd.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/morning-plan/launchd.log</string>
+
+  <!-- Run only on schedule: not at load, and not again after a failure. -->
+  <key>RunAtLoad</key>
+  <false/>
+  <key>KeepAlive</key>
+  <false/>
+</dict>
+</plist>
