@@ -1,6 +1,6 @@
 ---
 description: Daily planner over a folder of Markdown tasks, with modes for a weekly plan, sorting loose items into tasks, breaking down large tasks, and end-of-day wrap-up
-argument-hint: [plan | week | check | done | wrap | inbox | breakdown | switch | estimate | away | help] [task or date]
+argument-hint: [plan | week | check | done | wrap | dump | breakdown | switch | estimate | away | help] [task or date]
 ---
 
 > Example command from
@@ -54,7 +54,7 @@ exactly these fields and a lowercase-hyphen file name (`renew-library-card.md`).
 - `check`: mid-day check-in, update the plan;
 - `done [task]`: mark a task complete;
 - `wrap`: end-of-day review, carry forward what is unfinished;
-- `inbox`: sort a list of loose items into tasks;
+- `dump`: sort a list of loose items into tasks;
 - `breakdown <task>`: split a large or vague task into concrete steps;
 - `switch`: close one task and open the next with a parking note;
 - `estimate <task> <estimate>`: check an estimate for missing sub-tasks;
@@ -75,9 +75,9 @@ exactly these fields and a lowercase-hyphen file name (`renew-library-card.md`).
 
 ## Mode: plan (default)
 
-### 1. Loose items
+### 1. Optional dump
 
-Ask once: "Anything not yet written down?" If I list items, run `inbox` on them first.
+Ask once: "Anything not yet written down?" If I list items, run `dump` on them first.
 
 ### 2. Gather
 
@@ -221,10 +221,9 @@ drop. If a task is too vague to start, offer `breakdown`. Write the updated tabl
 3. Propose tomorrow's top three tasks.
 4. Append a three-sentence summary under `## Summary` in today's journal.
 
-## Mode: inbox
+## Mode: dump
 
-1. Ask for the list of loose items (notes, requests, ideas, emails to answer). Wait
-   until I finish.
+1. Ask me to list everything on my mind, in any order. Wait until I finish.
 2. Put each item in one bucket and show a table `Item | Bucket | Next step`:
 
 | Bucket | Meaning | Next step |
@@ -282,4 +281,4 @@ When the prompt says the run is unattended (for example the scheduled morning jo
 - ask nothing; where a mode would ask, state the assumption made;
 - edit no files; print the plan to standard output only;
 - list overdue items under a heading "Needs a decision" and leave their dates alone;
-- skip the loose-items question and the calendar dialog if Calendar access was never granted.
+- skip the optional dump and the calendar dialog if Calendar access was never granted.
