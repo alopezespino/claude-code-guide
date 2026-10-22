@@ -13,6 +13,13 @@
 *.synctex.gz
 *.toc
 *.vrb
+*.lof
+*.lot
+*.idx
+*.ind
+*.ilg
+*.xdv
+*.synctex(busy)
 
 # Confidential material never goes into git
 confidential/

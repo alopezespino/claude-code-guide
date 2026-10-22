@@ -120,7 +120,9 @@ pdftoppm -png -r 300 -f P -l P -x X -y Y -W W -H H -singlefile \
 
 ## 5. Build, verify, report
 
-In `<lit>/<Key>/`, run `latexmk -pdf -interaction=nonstopmode <Key>_summary.tex`. Fix
+In `<lit>/<Key>/`, build `<Key>_summary.tex` with the engine of the build command in
+CLAUDE.md (for example `latexmk -lualatex -interaction=nonstopmode <Key>_summary.tex`;
+if CLAUDE.md names none, `latexmk -pdf`). Fix
 and rebuild until there are no errors, no `??` and no undefined citations (an undefined
 `<Key>` means the paper is missing from the bibliography: report it). Render one or two
 pages (`pdftoppm -png -r 80`) and look for overflowing equations. Report: full paths of

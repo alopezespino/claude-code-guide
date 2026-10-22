@@ -1,0 +1,19 @@
+# Manifest for the example /press command: every template and every copy of it.
+# The projects, commits and dates below are fictional; replace them with your own.
+# /press writes this file back after each mode that changes it, templates sorted.
+
+templates:
+  tlog:
+    description: Logging helper with the same output in shell, R and Python
+    files: [tlog.sh, tlog.py, tlog.R, README.md]
+    instances:
+      - project: ~/projects/paper-a
+        dir: tools/tlog
+        ignore: []
+        synced: 3f2a9c1
+        deployed: 2026-01-15
+      - project: ~/projects/survey-cleaning
+        dir: code/tlog
+        ignore: [README.md, tlog.R]
+        synced: 3f2a9c1
+        deployed: 2026-02-03

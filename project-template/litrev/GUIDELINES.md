@@ -100,6 +100,9 @@ not). Read only the chapters needed.
   inside `commnt` or `mymodel`, stating the mapping explicitly (the project's notation
   conventions are in its CLAUDE.md).
 - Highlight macros built on `\tcbhighmath` (tcolorbox) go inside math mode.
+- The color names used here (NavyBlue, PineGreen, RedViolet, Goldenrod) need the
+  `dvipsnames` option (`\documentclass[dvipsnames]{article}` or
+  `\usepackage[dvipsnames]{xcolor}`); without it they are undefined.
 
 ## 7. Figures
 
@@ -126,7 +129,8 @@ takes priority over prose.
 ## 10. Done checklist
 
 - [ ] Compiles cleanly from the paper's folder
-      (`latexmk -pdf -interaction=nonstopmode <Key>_summary.tex`): no errors, no `??`,
+      (the project's build command from CLAUDE.md, e.g.
+      `latexmk -lualatex -interaction=nonstopmode <Key>_summary.tex`): no errors, no `??`,
       no undefined citations. An undefined key means the paper is missing from the
       bibliography: add it in the reference manager and export again.
 - [ ] Every reproduced equation and theorem checked against the PDF page.
