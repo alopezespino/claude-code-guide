@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Fake sacct: a WorkDir query prints $FAKE/sacct_wd.out, any other $FAKE/sacct.out.
+case "$*" in *WorkDir*) cat "$FAKE/sacct_wd.out" 2>/dev/null ;; *) cat "$FAKE/sacct.out" 2>/dev/null ;; esac
+exit 0

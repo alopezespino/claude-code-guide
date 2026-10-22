@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Fake timeout (macOS has none): drops the limit and runs the command.
+shift; exec "$@"

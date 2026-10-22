@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Fake sstat: prints $FAKE/sstat.out (JobID|TRESUsageInTot).
+cat "$FAKE/sstat.out" 2>/dev/null; exit 0

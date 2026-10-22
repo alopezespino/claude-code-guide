@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Fake squeue: prints $FAKE/squeue.out (format %i|%A|%T|%N|%j|%l|%C|%P|%r).
+# After $FAKE/squeue.n calls it prints $FAKE/squeue.after instead, if present.
+# A '%i %Z' query (run dir lookup) prints $FAKE/squeue_z.out.
+case "$*" in *'%Z'*) cat "$FAKE/squeue_z.out" 2>/dev/null; exit 0 ;; esac
+c=$(( $(cat "$FAKE/squeue.count" 2>/dev/null || echo 0) + 1 )); echo $c > "$FAKE/squeue.count"
+if [ -f "$FAKE/squeue.after" ] && [ "$c" -gt "$(cat "$FAKE/squeue.n" 2>/dev/null || echo 0)" ]; then
+  cat "$FAKE/squeue.after"
+else
+  cat "$FAKE/squeue.out" 2>/dev/null
+fi
+exit 0

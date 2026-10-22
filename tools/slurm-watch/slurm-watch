@@ -1,0 +1,536 @@
+#!/usr/bin/env bash
+# slurm-watch: watch Slurm job(s) on a remote cluster from your laptop, over
+# ssh, and exit with ONE verdict line on the first event that needs attention.
+# Example tool from claude-code-guide
+# (https://github.com/alopezespino/claude-code-guide). MIT licensed.
+#
+#   ENDED    the job (or every job of a name/array) left the queue; Slurm's
+#            accounting state, exit code, elapsed and peak memory, plus at most
+#            3 result lines from the log
+#   OOM      the job's cgroup recorded a new oom_kill while the job still runs
+#   MEMORY   resident memory reached --mem-pct (default 90) of the job limit
+#   IDLE     the job is RUNNING but used < --idle-cores cores for --idle
+#            (default 20m): the hang signature (0% CPU, alive). Cores is the
+#            larger of sstat CPU over all steps and nodes and the first-node
+#            job cgroup's /proc ticks
+#   STALL    --checkpoint / --progress did not advance within --first (first
+#            checkpoint after start) or --every (gap between checkpoints)
+#   BLOCKED  a PENDING job cannot start: its walltime crosses a maintenance
+#            reservation that holds it (ALL_NODES, every node of the job's
+#            partition, or named in its pending reason), or its reason is
+#            DependencyNeverSatisfied, a QOS / partition limit, or
+#            ReqNodeNotAvail (a job that never starts never ends, so an
+#            end-only watcher stays silent forever)
+#   STARTED  PENDING -> RUNNING (only with --notify-start)
+#   UNREACHABLE  the cluster could not be queried for --unreachable (default
+#            30m), so silence would no longer mean "still running"
+#
+# Design rules (see README.md): one short ssh call per poll, each killed after
+# 90 s; all filtering happens on the cluster, only key|value lines come back;
+# nothing is printed while the job is healthy; the process exits after its one
+# event, so it works as a Claude Code background Bash command. Re-arm with the
+# same arguments to keep watching after an alarm.
+#
+# Usage:
+#   slurm-watch [--host <ssh alias>] --jobid <id>[,<id>...] | --dir <remote run dir> | --name <job name>
+#              [--log <remote file>] [--checkpoint '<remote glob>'] [--progress '<regex>']
+#              [--first <dur>] [--every <dur>] [--idle <dur>|--no-idle]
+#              [--idle-cores <x>] [--mem-pct <n>] [--result '<regex>']
+#              [--require '<regex>'] [--allow-end TIMEOUT,PREEMPTED] [--no-blocked]
+#              [--notify-start] [--poll <dur>] [--unreachable <dur>] [--not-found <dur>]
+# The host is an ssh Host alias (key-based, no password prompt): --host, else
+# $SLURM_WATCH_HOST. Durations: 90, 90s, 20m, 2h.
+#
+# Exit codes: 0 ended COMPLETED 0:0 | 1 ended otherwise | 2 usage | 3 started |
+# 4 job not found | 5 already watched | 10 oom | 11 memory | 12 idle | 13 stall |
+# 14 blocked | 20 unreachable | 30 stopped by a signal.
+set -u
+
+host="${SLURM_WATCH_HOST:-}"; poll=60; not_found=300; mode=""; key=""; log=""; ckpt=""; prog=""; first=""; every=""
+idle=1200; idle_cores=0.1; mem_pct=90; notify_start=0; unreachable=1800
+require=""; allow_end=""; blocked=1
+result='SUMMARY|Error|ERROR|Traceback|Execution halted|FAIL|DUE TO TIME LIMIT|CANCELLED|oom|Killed|DONE'
+state_dir="${SLURM_WATCH_STATE:-$HOME/.claude/state/slurm-watch}"
+
+die() { echo "slurm-watch: $*"; exit 2; }
+dur() {  # 90 | 90s | 20m | 2h -> seconds
+  case "$1" in
+    *h) echo $(( ${1%h} * 3600 )) ;; *m) echo $(( ${1%m} * 60 )) ;;
+    *s) echo "${1%s}" ;; *[!0-9]*|"") die "bad duration: $1" ;; *) echo "$1" ;;
+  esac
+}
+# BLOCKED decision on one poll's probe output: prints one reason line for the
+# first PENDING job that cannot start, nothing otherwise. A MAINT reservation
+# (R|name|start|end|scope) holds a job only when its scope is ALL (ALL_NODES
+# flag), its scope lists every partition of the job (it covers all of their
+# nodes), or the job's pending reason names it; then the job is blocked if
+# its walltime crosses the reservation window. Test: tests/blocked.sh.
+blocked_verdict() {  # blocked_verdict <probe output> <now epoch>
+  printf '%s\n' "$1" | awk -F'|' -v now="$2" '
+    $1 == "R" { rn[++nr] = $2; rs[nr] = $3; re[nr] = $4; sc[nr] = $5 }
+    $1 == "Q" && $4 == "PENDING" { q[++nq] = $0 }
+    END {
+      for (i = 1; i <= nq; i++) {
+        split(q[i], f, "|"); id = f[2]; lim = f[7]; reason = f[9]; part = f[10]
+        if (reason ~ /DependencyNeverSatisfied|ReqNodeNotAvail|PartitionTimeLimit|MaxWallDuration|InvalidQOS|InvalidAccount|BadConstraints|PartitionConfig|QOSNotAllowed|AccountNotAllowed/) {
+          print id " pending with reason (" reason ")"; exit }
+        for (r = 1; r <= nr; r++) {
+          hold = (sc[r] == "ALL") || (rn[r] != "" && index(reason, rn[r]) > 0)
+          if (!hold && part != "" && sc[r] != "") {
+            np = split(part, pp, ","); hold = 1
+            for (k = 1; k <= np; k++) if (index("," sc[r] ",", "," pp[k] ",") == 0) hold = 0
+          }
+          if (hold && now < re[r] && now + lim > rs[r]) {
+            printf "%s: walltime %.1fh crosses maintenance reservation %s starting in %.1fh (@%d), so it cannot start until the reservation ends (reason %s)\n",
+              id, lim / 3600, rn[r], (rs[r] - now) / 3600, rs[r], reason; exit }
+        }
+      }
+    }'
+}
+# Self-test entry (tests/blocked.sh): probe lines on stdin, now in the variable.
+if [ -n "${SLURM_WATCH_BLOCKED_TEST:-}" ]; then
+  blocked_verdict "$(cat)" "$SLURM_WATCH_BLOCKED_TEST"; exit 0
+fi
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --jobid) mode=ids; key="$2"; shift 2 ;;
+    --dir) mode=dir; key="$2"; shift 2 ;;
+    --name) mode=name; key="$2"; shift 2 ;;
+    --log) log="$2"; shift 2 ;;
+    --checkpoint) ckpt="$2"; shift 2 ;;
+    --progress) prog="$2"; shift 2 ;;
+    --first) first=$(dur "$2") || exit 2; shift 2 ;;
+    --every) every=$(dur "$2") || exit 2; shift 2 ;;
+    --idle) idle=$(dur "$2") || exit 2; shift 2 ;;
+    --no-idle) idle=0; shift ;;
+    --idle-cores) idle_cores="$2"; shift 2 ;;
+    --mem-pct) mem_pct="$2"; shift 2 ;;
+    --result) result="$2"; shift 2 ;;
+    --notify-start) notify_start=1; shift ;;
+    --require) require="$2"; shift 2 ;;
+    --allow-end) allow_end="$2"; shift 2 ;;
+    --no-blocked) blocked=0; shift ;;
+    --poll) poll=$(dur "$2") || exit 2; shift 2 ;;
+    --unreachable) unreachable=$(dur "$2") || exit 2; shift 2 ;;
+    --not-found) not_found=$(dur "$2") || exit 2; shift 2 ;;
+    --host) host="$2"; shift 2 ;;
+    -h|--help) sed -n '2,47p' "$0"; exit 0 ;;
+    *) die "unknown argument $1 (see --help)" ;;
+  esac
+done
+[ -n "$mode" ] || die "one of --jobid, --dir, --name is required"
+[ -n "$host" ] || die "no cluster: pass --host <ssh alias> or set SLURM_WATCH_HOST"
+[ "$poll" -gt 0 ] || die "--poll must be > 0"
+# retry waits scale down with --poll (tests use --poll 1)
+retry_s=$(( poll < 10 ? poll : 10 )); nf_s=$(( poll < 20 ? poll : 20 )); lag_s=$(( poll < 30 ? poll : 30 ))
+if [ -n "$ckpt" ] && [ -n "$prog" ]; then die "use --checkpoint or --progress, not both"; fi
+if { [ -n "$first" ] || [ -n "$every" ]; } && [ -z "$ckpt$prog" ]; then
+  die "--first/--every need --checkpoint or --progress"
+fi
+if [ -n "$ckpt$prog" ] && [ -z "$first$every" ]; then die "--checkpoint/--progress need --first and/or --every"; fi
+
+# ---------------------------------------------------------------- remote probe
+# Runs on the cluster login node. Prints only prefixed lines:
+#   T|now  I|jobid  G|log path  S|id
+#   Q|id|rawid|state|nodes|name|limit s|cpus|reason|partition
+#   R|reservation|start|end|scope (ALL, the covered partitions, or empty)
+#   N|rawid|rss|limit|oom_kills|cpu_ticks|hz  U|rawid|cpu_s_all_steps|nsteps
+#   C|count|newest_mtime  P|count
+#   F|n|state counts|last id|name|state|exit|elapsed|max rss bytes|reqmem  L|log line
+#   E|what|message
+read -r -d '' PROBE <<'PROBE_EOF'
+set -u
+d() { [ "$1" = "-" ] || printf '%s' "$1" | base64 -d; }
+tilde() { case "$1" in "~"|"~/"*) printf '%s' "$HOME${1#\~}" ;; *) printf '%s' "$1" ;; esac; }
+op=$1; mode=$(d "$2"); key=$(d "$3"); log=$(tilde "$(d "$4")"); ckpt=$(tilde "$(d "$5")")
+prog=$(d "$6"); res=$(d "$7"); ids=$(d "$8"); nodeprobe=$(d "$9")
+echo "T|$(date +%s)"
+active='^(PENDING|RUNNING|CONFIGURING|COMPLETING|SUSPENDED|REQUEUED|REQUEUE_HOLD|REQUEUE_FED|RESIZING|SIGNALING|STAGE_OUT|PREEMPTED)$'
+
+if [ "$op" = resolve ]; then
+  case "$mode" in
+    ids) echo "I|$key" ;;
+    name) echo "I|$key" ;;
+    dir)
+      dd=$(tilde "$key"); real=$(cd "$dd" 2>/dev/null && pwd -P)
+      [ -z "$log" ] && [ -f "$dd/run.log" ] && echo "G|$dd/run.log"
+      j=""
+      [ -s "$dd/jobid" ] && j=$(tr -d '[:space:]' < "$dd/jobid")
+      [ -z "$j" ] && [ -n "$real" ] && j=$(squeue -h -u "$USER" -o '%i %Z' | awk -v d="$real" '$2 == d {print $1; exit}')
+      # a job that already finished is no longer in squeue: ask accounting
+      [ -z "$j" ] && [ -n "$real" ] && j=$(sacct -n -P -X -u "$USER" -S now-2days -o JobID,WorkDir 2>/dev/null |
+        awk -F'|' -v d="$real" '$2 == d {id = $1} END {print id}')
+      [ -n "$j" ] && echo "I|$j"
+      ;;
+  esac
+  exit 0
+fi
+
+if [ "$op" = poll ]; then
+  fmt='%i|%A|%T|%N|%j|%l|%C|%P|%r'
+  if [ "$mode" = name ]; then q=$(squeue -h -u "$USER" -n "$key" -o "$fmt" 2>&1); rc=$?
+  else q=$(squeue -h -j "$ids" -o "$fmt" 2>&1); rc=$?; fi
+  if [ $rc -ne 0 ]; then
+    case "$q" in *"Invalid job id"*) q="" ;; *) echo "E|squeue|$(printf '%s' "$q" | head -c 160 | tr '\n' ' ')"; exit 0 ;; esac
+  fi
+  run_nodes=""; first_id=""; pending=0
+  while IFS='|' read -r id raw st nodes name lim cpus part reason; do
+    [ -n "$id" ] || continue
+    echo "S|$id"
+    printf '%s' "$st" | grep -qE "$active" || continue
+    # time limit D-HH:MM:SS / HH:MM:SS / MM:SS -> seconds (0 if UNLIMITED)
+    lim_s=$(printf '%s' "$lim" | awk -F'[-:]' '/^[0-9]/ { if (NF == 4) s = $1*86400 + $2*3600 + $3*60 + $4;
+      else if (NF == 3 && $0 ~ /-/) s = $1*86400 + $2*3600 + $3*60; else if (NF == 3) s = $1*3600 + $2*60 + $3;
+      else if (NF == 2) s = $1*60 + $2; else s = $1*60 } END { print s + 0 }')
+    echo "Q|$id|$raw|$st|$nodes|$name|$lim_s|$cpus|$reason|$part"
+    [ "$st" = PENDING ] && pending=1
+    [ -n "$first_id" ] || first_id=$raw
+    if [ "$st" = RUNNING ] && [ -n "$nodes" ]; then
+      n1=$(scontrol show hostnames "$nodes" 2>/dev/null | head -1)
+      run_nodes="$run_nodes $n1:$raw"
+    fi
+  done <<< "$q"
+  # maintenance reservations: a pending job whose walltime crosses one cannot
+  # start before the reservation ends.
+  # scope: ALL with the ALL_NODES flag, else the pending jobs' partitions whose
+  # every node the reservation holds (empty for a reservation on a few nodes,
+  # which blocks nobody else).
+  if [ $pending = 1 ]; then
+    pparts=$(printf '%s\n' "$q" | awk -F'|' '$3 == "PENDING" {print $8}' | tr ',' '\n' | sort -u)
+    scontrol show reservation -o 2>/dev/null | grep -E 'Flags=[^ ]*MAINT' | while read -r line; do
+      rn=$(printf '%s' "$line" | grep -oE 'ReservationName=[^ ]+' | cut -d= -f2)
+      rs=$(date -d "$(printf '%s' "$line" | grep -oE 'StartTime=[^ ]+' | cut -d= -f2)" +%s 2>/dev/null)
+      re=$(date -d "$(printf '%s' "$line" | grep -oE 'EndTime=[^ ]+' | cut -d= -f2)" +%s 2>/dev/null)
+      fl=$(printf '%s' "$line" | grep -oE 'Flags=[^ ]+' | cut -d= -f2)
+      scope=""
+      case ",$fl," in *,ALL_NODES,*) scope=ALL ;; esac
+      if [ -z "$scope" ]; then
+        rnodes=$(printf '%s' "$line" | grep -oE '(^| )Nodes=[^ ]+' | sed 's/.*Nodes=//')
+        rlist=$(scontrol show hostnames "$rnodes" 2>/dev/null | sort -u)
+        for p in $pparts; do
+          pn=$(scontrol show partition "$p" -o 2>/dev/null | grep -oE '(^| )Nodes=[^ ]+' | sed 's/.*Nodes=//')
+          [ -n "$pn" ] || continue
+          miss=$(comm -23 <(scontrol show hostnames "$pn" 2>/dev/null | sort -u) <(printf '%s\n' "$rlist") | head -1)
+          [ -z "$miss" ] && scope="${scope:+$scope,}$p"
+        done
+      fi
+      [ -n "$rs" ] && [ -n "$re" ] && echo "R|$rn|$rs|$re|$scope"
+    done
+  fi
+  if [ -z "$log" ] && [ -n "$first_id" ]; then
+    so=$(scontrol show job -o "$first_id" 2>/dev/null | grep -oE 'StdOut=[^ ]+' | head -1)
+    [ -n "$so" ] && echo "G|${so#StdOut=}"
+  fi
+  if [ "$nodeprobe" = 1 ] && [ -n "$run_nodes" ]; then
+    NODE='uid=$(id -u); hz=$(getconf CLK_TCK); cg=${SLURM_WATCH_CGROUP_ROOT:-/sys/fs/cgroup}
+for j in "$@"; do
+  rss=0; lim=0; oom=0; pids=""
+  m=$cg/memory/slurm/uid_$uid/job_$j
+  v2=$cg/system.slice/slurmstepd.scope/job_$j
+  if [ -d "$m" ]; then
+    rss=$(awk '\''$1=="total_rss"{print $2}'\'' "$m/memory.stat")
+    lim=$(cat "$m/memory.limit_in_bytes")
+    oom=$(awk '\''$1=="oom_kill"{print $2}'\'' "$m/memory.oom_control")
+    pids=$(cat $cg/freezer/slurm/uid_$uid/job_$j/*/cgroup.procs $cg/cpuset/slurm/uid_$uid/job_$j/*/cgroup.procs 2>/dev/null | sort -u)
+  elif [ -d "$v2" ]; then
+    rss=$(awk '\''$1=="anon"{print $2}'\'' "$v2/memory.stat")
+    lim=$(cat "$v2/memory.max"); [ "$lim" = max ] && lim=0
+    oom=$(awk '\''$1=="oom_kill"{print $2}'\'' "$v2/memory.events")
+    pids=$(find "$v2" -name cgroup.procs -exec cat {} + 2>/dev/null | sort -u)
+  else
+    continue
+  fi
+  t=$(for p in $pids; do cut -d")" -f2- /proc/$p/stat 2>/dev/null; done | awk '\''{t += $12 + $13 + $14 + $15} END {printf "%.0f", t}'\'')
+  echo "N|$j|${rss:-0}|${lim:-0}|${oom:-0}|${t:-0}|$hz"
+done'
+    # one node per job, at most 4 jobs per poll, each node call capped at 25 s
+    for nj in $(printf '%s\n' $run_nodes | head -4); do
+      node=${nj%%:*}; raw=${nj#*:}
+      timeout 25 ssh -n -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+        "$node" "bash -c $(printf '%q' "$NODE") nodeprobe $raw" 2>/dev/null | grep '^N|'
+    done
+    # CPU seconds summed over ALL steps (batch, extern, srun steps) on ALL
+    # nodes: srun-launched Spark workers on other nodes are invisible to the
+    # first-node cgroup read above. sstat lists running steps only (-a).
+    for nj in $(printf '%s\n' $run_nodes | head -4); do
+      raw=${nj#*:}
+      u=$(timeout 25 sstat -a -j "$raw" --noheader -P -o JobID,TRESUsageInTot 2>/dev/null | awk -F'|' '
+        { if (!match($2, /(^|,)cpu=[^,]*/)) next
+          v = substr($2, RSTART, RLENGTH); sub(/.*cpu=/, "", v); dd = 0
+          if (v ~ /-/) { dd = substr(v, 1, index(v, "-") - 1); v = substr(v, index(v, "-") + 1) }
+          n = split(v, p, ":"); s = (n == 3) ? p[1]*3600 + p[2]*60 + p[3] : (n == 2 ? p[1]*60 + p[2] : p[1])
+          t += dd * 86400 + s; k++ }
+        END { if (k) printf "%.0f|%d\n", t, k }')
+      [ -n "$u" ] && echo "U|$raw|$u"
+    done
+  fi
+  if [ -n "$ckpt" ]; then
+    shopt -s nullglob; c=0; newest=0
+    for f in $ckpt; do c=$((c + 1)); m=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null || echo 0); [ "$m" -gt "$newest" ] && newest=$m; done
+    echo "C|$c|$newest"
+  fi
+  if [ -n "$prog" ] && [ -n "$log" ]; then
+    n=$(grep -cE -- "$prog" "$log" 2>/dev/null | head -1); echo "P|${n:-0}"
+  fi
+  exit 0
+fi
+
+if [ "$op" = final ]; then
+  # 9th argument carries --require for this op
+  require=$nodeprobe
+  cols=JobID,JobName,State,ExitCode,Elapsed,MaxRSS,ReqMem,StdOut
+  if [ "$mode" = name ]; then
+    acct=$(sacct -n -P -u "$USER" --name "$key" -S "${ids:-now-1days}" -o $cols 2>/dev/null)
+  else
+    acct=$(sacct -n -P -j "$ids" -o $cols 2>/dev/null)
+  fi
+  fline=$(printf '%s\n' "$acct" | awk -F'|' '
+    function bytes(v,  m) { m = 1; if (v ~ /K$/) m = 1024; else if (v ~ /M$/) m = 1048576;
+      else if (v ~ /G$/) m = 1073741824; else if (v ~ /T$/) m = 1099511627776; sub(/[KMGT]$/, "", v); return v * m }
+    NF < 5 { next }
+    $1 !~ /\./ { n++; st = $3; full = $3; sub(/ by .*/, "", st); cnt[st]++
+                 last = $1; nm = $2; ls = full; ex = $4; el = $5; rq = $7; so = $8 }
+    $6 != "" { b = bytes($6); if (b > mx) mx = b }
+    END { s = ""; for (k in cnt) s = s (s == "" ? "" : ",") k "x" cnt[k]
+          printf "F|%d|%s|%s|%s|%s|%s|%s|%.0f|%s|%s\n", n, s, last, nm, ls, ex, el, mx, rq, so }')
+  echo "$fline"
+  if [ -z "$log" ]; then
+    # job ended before the watcher saw it: take the log path from accounting
+    IFS='|' read -r _ _ _ lid lname _ _ _ _ _ so <<< "$fline"
+    base=${lid%%_*}; task=""; case "$lid" in *_*) task=${lid#*_} ;; esac
+    log=$(printf '%s' "$so" | sed -e "s/%j/$lid/g" -e "s/%A/$base/g" -e "s/%a/$task/g" -e "s/%x/$lname/g" -e "s/%u/$USER/g")
+    [ -f "$log" ] && echo "G|$log"
+  fi
+  if [ -n "$log" ] && [ -f "$log" ]; then
+    grep -aE -- "$res" "$log" 2>/dev/null | tail -3 | cut -c1-200 | sed 's/^/L|/'
+    if [ -n "$require" ]; then
+      if grep -qaE -- "$require" "$log" 2>/dev/null; then echo "M|1"; else echo "M|0"; fi
+    fi
+  elif [ -n "$require" ]; then
+    echo "M|nolog"
+  fi
+  exit 0
+fi
+PROBE_EOF
+
+b64() { if [ -z "$1" ]; then printf -- '-'; else printf '%s' "$1" | base64 | tr -d '\n'; fi; }
+probe() {  # probe <op> <ids> <nodeprobe>
+  local script_b64 cmd
+  script_b64=$(b64 "$PROBE")
+  cmd="bash -c \"\$(echo $script_b64 | base64 -d)\" slurm-watch $1 $(b64 "$mode") $(b64 "$key") $(b64 "$log") $(b64 "$ckpt") $(b64 "$prog") $(b64 "$result") $(b64 "$2") $(b64 "$3")"
+  # hard 90 s cap per call: an ssh that loses its network mid-call must never
+  # block the watcher (the default ssh has no ServerAlive and waits forever)
+  perl -e 'alarm shift; exec @ARGV' 90 \
+    ssh -n -T -o BatchMode=yes -o ForwardX11=no -o ConnectTimeout=20 \
+      -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o LogLevel=ERROR \
+      "$host" "$cmd" 2>/dev/null | grep -E '^[TIGQSNUCPFLEMR]\|'
+}
+field() { printf '%s\n' "$out" | grep "^$1|" | head -1 | cut -d'|' -f"$2"; }
+human() { awk -v b="$1" 'BEGIN { split("B K M G T", u, " "); i = 1; while (b >= 1024 && i < 5) { b /= 1024; i++ }
+  printf (i == 1 ? "%d%s" : "%.1f%s"), b, u[i] }'; }
+
+case "$mode" in ids) label="job $key" ;; *) label="$mode $key" ;; esac
+verdict=0
+finish() {  # finish <exit code> <line> [extra lines]
+  local rc=$1; shift
+  verdict=1
+  printf 'slurm-watch: %s\n' "$@"
+  exit "$rc"
+}
+# empty the pid file on exit (an empty file matches no target); never deletes
+cleanup() { [ -f "$state_dir/$$" ] && : > "$state_dir/$$"; }
+trap cleanup EXIT
+trap '[ $verdict = 1 ] || echo "slurm-watch: STOPPED watcher on $label by a signal, no verdict"; exit 30' TERM INT HUP
+
+# ------------------------------------------------------------ identify the job
+ids=""; tries=0; start=$(date +%s)
+attempt=0
+while :; do
+  out=$(probe resolve "" 0)
+  attempt=$((attempt + 1))
+  # the first query must answer: a broken ssh/auth/PATH setup would otherwise
+  # look exactly like a healthy silent watch
+  if [ -z "$(field T 2)" ]; then
+    [ $attempt -ge 3 ] && finish 20 "UNREACHABLE $label: the first 3 queries to $host returned nothing (ssh, auth or remote shell problem); nothing is being watched"
+    sleep "$retry_s"; continue
+  fi
+  g=$(field G 2); [ -z "$log" ] && [ -n "$g" ] && log=$g
+  ids=$(field I 2)
+  [ -n "$ids" ] && break
+  if [ $(( $(date +%s) - start )) -ge "$not_found" ]; then
+    finish 4 "NOT FOUND no Slurm job for $label after $(( not_found / 60 )) min (checked jobid file, squeue WorkDir, sacct 2 days)"
+  fi
+  sleep "$nf_s"
+done
+[ "$mode" = dir ] && label="job $ids ($key)"
+[ "$mode" = ids ] && label="job $ids"
+[ "$mode" = name ] && label="name $key"
+
+# one watcher per job: refuse a second one on the same target
+mkdir -p "$state_dir"
+for f in "$state_dir"/*; do
+  [ -f "$f" ] || continue
+  p=${f##*/}
+  if kill -0 "$p" 2>/dev/null && grep -qxF "target=$mode:$ids" "$f"; then
+    finish 5 "DUPLICATE $label is already watched by pid $p; not starting a second watcher"
+  fi
+done
+printf 'target=%s:%s\nids=%s\nkey=%s\nlog=%s\nstarted=%s\n' "$mode" "$ids" "$ids" "$key" "$log" "$(date +%s)" > "$state_dir/$$"
+
+# ------------------------------------------------------------------ poll loop
+nodeprobe=0
+[ "$idle" -gt 0 ] && nodeprobe=1
+[ "$mem_pct" -gt 0 ] && nodeprobe=1
+last_ok=$(date +%s); gone=0; seen_ids=""; name_since=$(date -v-2d +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -d '2 days ago' +%Y-%m-%dT%H:%M:%S)
+last_cores=""; run_seen=""; oom_base=""; cpu_job=""; cpu_ticks=""; cpu_u=""; cpu_t=""; idle_since=""
+sig_prev=""; sig_changed=0; sig_last=""
+
+while :; do
+  out=$(probe poll "$ids" "$nodeprobe")
+  now=$(date +%s)
+  # laptop sleep: a gap far beyond one poll is not the cluster being unreachable and
+  # not a CPU sample; restart both clocks
+  if [ -n "${prev_t:-}" ] && [ $(( now - prev_t )) -gt $(( 5 * poll + 180 )) ]; then
+    last_ok=$now; cpu_ticks=""; cpu_u=""; idle_since=""
+  fi
+  prev_t=$now
+  if [ -z "$(field T 2)" ] || [ -n "$(field E 2)" ]; then
+    if [ $(( now - last_ok )) -ge "$unreachable" ]; then
+      finish 20 "UNREACHABLE $label: no successful Slurm query for $(( (now - last_ok) / 60 )) min (last error: $(field E 3)); job state unknown, re-arm or check by hand"
+    fi
+    sleep "$poll"; continue
+  fi
+  last_ok=$now
+  g=$(field G 2); [ -z "$log" ] && [ -n "$g" ] && log=$g
+  for s in $(printf '%s\n' "$out" | grep '^S|' | cut -d'|' -f2); do
+    case ",$seen_ids," in *",$s,"*) ;; *) seen_ids="${seen_ids:+$seen_ids,}$s" ;; esac
+  done
+  nq=$(printf '%s\n' "$out" | grep -c '^Q|')
+
+  if [ "$nq" -eq 0 ]; then
+    gone=$((gone + 1))
+    # a chain may submit its next link as the previous one exits: in name mode
+    # the queue must be empty on two consecutive polls
+    if [ "$mode" = name ] && [ $gone -lt 2 ]; then sleep "$poll"; continue; fi
+    if [ "$mode" = name ]; then fin_ids=$name_since; else fin_ids=$ids; fi
+    out=$(probe final "$fin_ids" "$require")
+    f_n=$(field F 2); f_counts=$(field F 3); f_id=$(field F 4); f_name=$(field F 5)
+    f_state=$(field F 6); f_exit=$(field F 7); f_el=$(field F 8); f_rss=$(field F 9); f_req=$(field F 10)
+    g=$(field G 2); [ -z "$log" ] && [ -n "$g" ] && log=$g
+    st=${f_state%% by *}
+    # accounting can lag a few seconds behind squeue
+    case "$st" in PENDING|RUNNING|COMPLETING|REQUEUED|"") [ $gone -lt 5 ] && { sleep "$lag_s"; continue; } ;; esac
+    rss_txt=""; [ -n "$f_rss" ] && [ "$f_rss" != 0 ] && rss_txt=", peak RSS $(human "$f_rss")${f_req:+ of $f_req}"
+    many=""; [ "${f_n:-0}" -gt 1 ] && many=" [$f_n jobs: $f_counts]"
+    line="ENDED job ${f_id:-$ids} (${f_name:-?}) ${f_state:-state unknown} ${f_exit:-?} after ${f_el:-?}${rss_txt}${many}"
+    # success: the last job COMPLETED 0:0, every other job ended COMPLETED or
+    # in an --allow-end state, and the --require line is in the log
+    rc=1
+    others=$(printf '%s' "$f_counts" | tr ',' '\n' | sed 's/x[0-9]*$//' |
+      grep -vxE "COMPLETED$(printf '%s' "$allow_end" | sed 's/[^A-Z_,]//g; s/,/|/g; s/^./|&/')" | grep -c .)
+    [ "$st" = COMPLETED ] && [ "$f_exit" = "0:0" ] && [ "$others" = 0 ] && rc=0
+    if [ -n "$require" ]; then
+      case "$(field M 2)" in
+        1) line="$line; --require found" ;;
+        0) line="$line; --require /$require/ NOT in log"; rc=1 ;;
+        *) line="$line; --require not checked (no log)"; rc=1 ;;
+      esac
+    fi
+    [ -n "$log" ] && line="$line; log $log"
+    logs=$(printf '%s\n' "$out" | grep '^L|' | cut -d'|' -f2-)
+    if [ -n "$logs" ]; then
+      set -- "$line"; while IFS= read -r l; do set -- "$@" "  log: $l"; done <<< "$logs"
+      finish $rc "$@"
+    fi
+    finish $rc "$line"
+  fi
+  gone=0
+
+  if [ $blocked = 1 ]; then
+    bl=$(blocked_verdict "$out" "$now")
+    if [ -n "$bl" ]; then
+      ep=$(printf '%s' "$bl" | sed -n 's/.*(@\([0-9]*\)).*/\1/p')
+      [ -n "$ep" ] && bl=$(printf '%s' "$bl" | sed "s/(@$ep)/at $(date -r "$ep" '+%Y-%m-%d %H:%M' 2>/dev/null || date -d "@$ep" '+%Y-%m-%d %H:%M')/")
+      finish 14 "BLOCKED job $bl; cancel and resubmit, or re-arm with --no-blocked if the wait is intended"
+    fi
+  fi
+
+  nrun=$(printf '%s\n' "$out" | grep '^Q|' | awk -F'|' '$4 == "RUNNING"' | wc -l | tr -d ' ')
+  if [ "$nrun" -gt 0 ] && [ -z "$run_seen" ]; then
+    run_seen=$now
+    if [ $notify_start = 1 ]; then
+      q=$(printf '%s\n' "$out" | grep '^Q|' | awk -F'|' '$4 == "RUNNING" {print $2 " on " $5; exit}')
+      finish 3 "STARTED $label: $q (watch stopped; re-arm to keep watching)"
+    fi
+  fi
+
+  # memory and OOM on the compute node (first job with a node reading)
+  nline=$(printf '%s\n' "$out" | grep '^N|' | head -1)
+  if [ -n "$nline" ]; then
+    IFS='|' read -r _ nj nrss nlim noom nticks nhz <<< "$nline"
+    if [ -z "$oom_base" ]; then oom_base=$noom
+    elif [ "${noom:-0}" -gt "$oom_base" ]; then
+      finish 10 "OOM job $nj: $(( noom - oom_base )) process(es) OOM-killed in the job cgroup since arming (RSS $(human "$nrss") of $(human "$nlim")); a fork-pool gather may now hang (watch stopped)"
+    fi
+    if [ "$mem_pct" -gt 0 ] && [ "${nlim:-0}" -gt 0 ] && [ "$(awk -v r="$nrss" -v l="$nlim" -v p="$mem_pct" 'BEGIN {print (r * 100 >= l * p) ? 1 : 0}')" = 1 ]; then
+      finish 11 "MEMORY job $nj: RSS $(human "$nrss") of $(human "$nlim") limit (>= ${mem_pct}%) (watch stopped; re-arm with a higher --mem-pct to continue)"
+    fi
+  fi
+
+  # CPU liveness: the larger of two lower bounds on the job's cores in use,
+  # (a) sstat CPU seconds summed over all steps on all nodes (U line), which
+  # sees srun steps on other nodes, and (b) /proc ticks of the job cgroup's
+  # pids on the first node (N line), which sees processes that sstat misses
+  # (daemons outside a step's accounting). Either one busy means not idle.
+  if [ "$idle" -gt 0 ]; then
+    ij=""; [ -n "$nline" ] && ij=$nj
+    uline=""
+    [ -n "$ij" ] && uline=$(printf '%s\n' "$out" | awk -F'|' -v j="$ij" '$1 == "U" && $2 == j' | head -1)
+    [ -z "$ij" ] && uline=$(printf '%s\n' "$out" | grep '^U|' | head -1) && ij=$(printf '%s' "$uline" | cut -d'|' -f2)
+    usec=""; [ -n "$uline" ] && usec=$(printf '%s' "$uline" | cut -d'|' -f3)
+    nsec=""; [ -n "$nline" ] && [ "$nj" = "$ij" ] && nsec=$(awk -v t="$nticks" -v hz="$nhz" 'BEGIN { if (hz > 0) printf "%.2f", t / hz }')
+    if [ -n "$ij" ] && [ "$cpu_job" = "$ij" ] && [ -n "$cpu_t" ] && [ "$now" -gt "$cpu_t" ] &&
+       { { [ -n "$usec" ] && [ -n "$cpu_u" ]; } || { [ -n "$nsec" ] && [ -n "$cpu_ticks" ]; }; }; then
+      busy=$(awk -v u0="$cpu_u" -v u1="$usec" -v n0="$cpu_ticks" -v n1="$nsec" -v dt=$(( now - cpu_t )) -v th="$idle_cores" '
+        BEGIN { cu = -1; cn = -1
+          if (u0 != "" && u1 != "") { cu = (u1 - u0) / dt; if (cu < 0) cu = 0 }
+          if (n0 != "" && n1 != "") { cn = (n1 - n0) / dt; if (cn < 0) cn = 0 }
+          c = (cu > cn) ? cu : cn
+          printf "%s %.2f %s %s", (c < th ? "idle" : "busy"), c,
+            (cu < 0 ? "n/a" : sprintf("%.2f", cu)), (cn < 0 ? "n/a" : sprintf("%.2f", cn)) }')
+      set -- $busy
+      last_cores=$2
+      if [ "$1" = idle ]; then
+        [ -n "$idle_since" ] || idle_since=$cpu_t
+        if [ $(( now - idle_since )) -ge "$idle" ]; then
+          rss_txt=""; [ -n "$nline" ] && rss_txt="; RSS $(human "$nrss")"
+          finish 12 "IDLE job $ij RUNNING but at $2 cores for $(( (now - idle_since) / 60 )) min (threshold $idle_cores; all steps via sstat $3, first-node cgroup $4)$rss_txt (watch stopped; re-arm with --no-idle if the wait is expected)"
+        fi
+      else
+        idle_since=""
+      fi
+    fi
+    if [ -n "$ij" ]; then
+      [ "$cpu_job" = "$ij" ] || idle_since=""
+      cpu_job=$ij; cpu_u=$usec; cpu_ticks=$nsec; cpu_t=$now
+    fi
+  fi
+
+  # checkpoint / progress stall
+  if [ -n "$ckpt$prog" ] && [ -n "$run_seen" ]; then
+    if [ -n "$ckpt" ]; then sig="$(field C 2)|$(field C 3)"; what="checkpoint $ckpt"
+    else sig=$(field P 2); what="progress /$prog/ in $log"; fi
+    if [ -z "$sig_prev" ]; then sig_prev=$sig; sig_last=$run_seen
+    elif [ "$sig" != "$sig_prev" ]; then sig_prev=$sig; sig_changed=1; sig_last=$now
+    fi
+    t0=$run_seen; [ "$t0" -lt "$start" ] && t0=$start
+    if [ $sig_changed = 0 ] && [ -n "$first" ] && [ $(( now - t0 )) -ge "$first" ]; then
+      finish 13 "STALL $label: no first $what within $(( first / 60 )) min of running while using ${last_cores:-unmeasured} cores (watch stopped)"
+    fi
+    if [ -n "$every" ] && { [ $sig_changed = 1 ] || [ -z "$first" ]; } && [ $(( now - sig_last )) -ge "$every" ]; then
+      finish 13 "STALL $label: $what has not advanced for $(( (now - sig_last) / 60 )) min (limit $(( every / 60 ))) while using ${last_cores:-unmeasured} cores (watch stopped)"
+    fi
+  fi
+  sleep "$poll"
+done

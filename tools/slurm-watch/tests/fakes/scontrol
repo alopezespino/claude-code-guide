@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Fake scontrol: hostnames echoes its list; show job gives a StdOut path;
+# show reservation prints $FAKE/reservation.out.
+case "$1 $2" in
+  "show hostnames") printf '%s\n' "$3" | tr ',' '\n' ;;
+  "show job") echo "JobId=$4 StdOut=$FAKE/job_$4.log" ;;
+  "show reservation") cat "$FAKE/reservation.out" 2>/dev/null ;;
+  "show partition") cat "$FAKE/partition.out" 2>/dev/null ;;
+esac
+exit 0
