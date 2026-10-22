@@ -1,5 +1,10 @@
 # Claude Code + VS Code: a setup that keeps Claude focused
 
+> **How to read this guide.** Only the minimal setup is meant to be followed in order:
+> [Part 1](#part-1-setup-step-by-step), Steps 1 to 4 (required), then Steps 5 and 6
+> (recommended). Everything after that is a reference. Look up the part you need when you
+> need it, and try only the features you want; nothing later depends on reading it all.
+
 ## Unsure about AI in your work?
 If you are not sure whether to bring AI into your
 workflow, how to use it and still keep control, integrity and authorship of your work,
@@ -48,10 +53,15 @@ Zotero) are named as such.
 - [What is in this repository](#what-is-in-this-repository)
 - [Part 1. Setup, step by step](#part-1-setup-step-by-step)
   - [Optional: start from my example files](#optional-start-from-my-example-files)
+  - [My LaTeX setup is not the default](#my-latex-setup-is-not-the-default)
 - [Part 2. Best practices: fewer tokens, a smarter Claude](#part-2-best-practices-fewer-tokens-a-smarter-claude)
   - [Leverage Claude's capabilities with slash commands](#leverage-claudes-capabilities-with-slash-commands)
 - [Part 3. Easy extras with a large payoff](#part-3-easy-extras-with-a-large-payoff)
+  - [VS Code extensions worth having](#vs-code-extensions-worth-having)
 - [Part 4. Advanced use cases](#part-4-advanced-use-cases)
+  - [The largest productivity gain: a plan, many sessions, one manager](#the-largest-productivity-gain-a-plan-many-sessions-one-manager)
+- [Part 5. Working on a cluster from VS Code](#part-5-working-on-a-cluster-from-vs-code)
+- [Part 6. Mathematica and VS Code](#part-6-mathematica-and-vs-code)
 - [License](#license)
 
 ## What is in this repository
@@ -63,7 +73,8 @@ claude-code-guide/
 ├── scripts/
 │   ├── preflight.sh             reports which tools are installed (read-only)
 │   ├── install-global.sh        copies global/ into ~/.claude, never overwrites
-│   └── new-project.sh           creates a new project from project-template/
+│   ├── new-project.sh           creates a new project from project-template/
+│   └── peer-session.sh          lists, reopens and stops named sessions
 ├── global/                      files for ~/.claude: apply to every project
 │   ├── CLAUDE.md                starter personal rules
 │   ├── settings.json            permissions and hooks
@@ -78,7 +89,9 @@ claude-code-guide/
 │       ├── zotero.md            /zotero: manage a Zotero library via its Web API
 │       ├── press.md             /press: one canonical copy of each shared script
 │       ├── debrief.md           /debrief: meeting recording to summary and issues
-│       └── ra-check.md          /ra-check: progress on issues you assigned
+│       ├── ra-check.md          /ra-check: progress on issues you assigned
+│       ├── organize.md          /organize: plan the day from Markdown task files
+│       └── latex-revise.md      /latex-revise: minimal edits to a .tex, then rebuild
 ├── project-template/            copied into each new project
 │   ├── CLAUDE.md                instructions Claude reads every session
 │   ├── README.md                five-question README
@@ -91,9 +104,18 @@ claude-code-guide/
 │   │   └── lessons.md           numbered lessons log
 │   ├── litrev/GUIDELINES.md     standard for paper summaries
 │   └── style/writing-style.md   writing-style guide skeleton
-└── prompts/
-    ├── build-style-guide.md     derive your style guide from your own writing
-    └── merge-existing-setup.md  merge these files into an existing ~/.claude
+├── prompts/
+│   ├── build-style-guide.md     derive your style guide from your own writing
+│   ├── merge-existing-setup.md  merge these files into an existing ~/.claude
+│   ├── multi-session-plan.md    plan template: sessions, dependencies, handoffs
+│   └── manager-protocol.md      rules for the manager and worker sessions
+├── tools/
+│   ├── slurm-watch/             silent watcher for cluster jobs (wakes Claude once)
+│   └── zotero/                  Python scripts behind /zotero
+└── examples/
+    ├── morning-plan/            launchd job that runs /organize each weekday
+    ├── coordination/            skeleton coordination repo for /press
+    └── mathematica-household/   Mathematica package + tests + notebook (Part 6)
 ```
 
 None of these files is needed to follow the guide. They are my own setup, made generic:
@@ -356,8 +378,8 @@ way every time. They are not built into Claude Code; installing them is covered
 ### Optional: start from my example files
 
 Steps 1 to 6 need nothing from this repository. The repository holds my own setup, made
-generic: personal rules, permissions, two hooks, eight slash commands and a project
-template, all written for how I work. I developed all of them with Claude Code itself,
+generic: personal rules, permissions, two hooks, ten slash commands, a project
+template, prompts, tools and worked examples, all written for how I work. I developed all of them with Claude Code itself,
 so each one is also an example of using Claude to customize Claude and to make your own
 work more productive. Installing them gives you a populated setup to revise instead of a
 blank one. There are two ways to use them: install them as they are
@@ -425,6 +447,33 @@ as above, or fork it on GitHub to keep your version under version control
    and existing projects do not, because the scripts never overwrite a file. Copy a
    changed file over by hand, or move the old one to the Trash and rerun the script.
 
+#### My LaTeX setup is not the default
+
+The LaTeX files and commands here follow my setup, which differs from a standard TeX
+installation in the points below. Decide for each one whether to keep it or change the
+files before you use them.
+
+| My choice | The usual default | Where it appears | What to change if you differ |
+| --- | --- | --- | --- |
+| **LuaLaTeX** as the engine (`latexmk -lualatex`), because my Beamer slides use the metropolis theme, which needs LuaLaTeX or XeLaTeX for its fonts, and because LuaLaTeX takes Unicode input directly. | pdfLaTeX (`latexmk -pdf`) | `project.code-workspace` recipe, build line in `project-template/CLAUDE.md`, `/papersummarize`, `litrev/GUIDELINES.md` | Change `-lualatex` to `-pdf` in the workspace file and in `CLAUDE.md`. A pdfLaTeX preamble (`inputenc`, `fontenc`) does not build under LuaLaTeX, and a `fontspec` preamble does not build under pdfLaTeX. `/compile-tex` falls back to `latexmk -pdf` when `CLAUDE.md` names no build command. |
+| **biblatex with biber** (`style=numeric`) and `\autocite{Key}` | BibTeX with natbib and `\cite` | `/papersummarize`, `litrev/GUIDELINES.md`, the project permissions (biber allowed) | Keep your own bibliography stack and edit the summary preamble; with natbib write `\cite` instead of `\autocite`. |
+| **`refs.bib` exported by Zotero's Better BibTeX**, and Claude denied editing it | A `.bib` file edited by hand | `project-template/.claude/settings.json`, `project-template/CLAUDE.md` | If you maintain the `.bib` by hand, delete the `Edit(./refs.bib)` deny rule. |
+| **`-shell-escape` denied** in every form | Off by default, often turned on for `minted` or `svg` | `global/settings.json`, `/compile-tex` | If you need `minted`, `svg` or `gnuplottex`, change the deny to an ask rule, so you approve each use. |
+| **Build files next to the `.tex`**, never cleaned automatically (faster rebuilds), with SyncTeX on and errors reported as file:line | LaTeX Workshop's defaults | `project.code-workspace`, `project-template/.gitignore` | For a separate build folder, set `latex-workshop.latex.outDir` and latexmk's `-outdir`, and add that folder to `.gitignore`. |
+| **`dvipsnames` colors and tcolorbox highlights** in paper summaries | Plain `xcolor` | `litrev/GUIDELINES.md` | Load `xcolor` with `dvipsnames` and `tcolorbox` with `skins,theorems`, or replace the colors and highlight macros. |
+| **Appendix slides linked both ways** (`\hyperlink` to the appendix, a `back` button returning) | No convention | `/latex-revise` | Delete the rule from the command if you do not use Beamer appendices. |
+
+One fix specific to Apple Silicon: on my Mac, the biber that ships with TeX Live fails
+with a `lipo` error. A copy thinned to arm64 works:
+
+```bash
+mkdir -p ~/.local/bin
+lipo "$(command -v biber)" -thin arm64 -output ~/.local/bin/biber-arm64
+latexmk -lualatex -e '$biber="~/.local/bin/biber-arm64 %O %S";' main.tex
+```
+
+Use this only if your build stops at the biber step with that error.
+
 #### What each example file does
 
 "Recommended" marks the files with the largest payoff for the least effort.
@@ -446,6 +495,8 @@ as above, or fork it on GitHub to keep your version under version control
 | `commands/press.md`          | Defines `/press` with four modes: consolidate (turn a project's script into a template), deploy (copy a template into a new project), sync (update every copy) and check (report copies that differ). A manifest in the coordination repo (path set in `~/.claude/CLAUDE.md`, default `~/coordination`; created on first run after your approval) lists each template and where its copies live; scripts read per-project values from `project.yaml`. Shows a diff before overwriting a locally edited copy, never deletes, commits per project, never pushes without approval.                                  | Optional; useful once a script lives in two or more projects                                                                                    | A fix made once reaches every project                                               |
 | `commands/debrief.md`        | Defines `/debrief <audio file>`: runs [debriefr](https://github.com/alopezespino/debriefr) to transcribe and identify speakers (you name unknown voices from short clips), writes a summary with an action-items table, and, after a dry run and your approval, syncs the items to GitHub issues on a Project board (the board needs `gh auth refresh -s project` once).                                                                                                                                                                                     | Optional; needs debriefr, a Hugging Face token, and an Anthropic key or a summary written in the session (install lines at the top of the file) | A meeting's next steps assigned without retyping notes                              |
 | `commands/ra-check.md`       | Defines `/ra-check`, with optional arguments N (days), `all` and `owner/repo`: reads the open issues of a repository where you coordinate others' work, and for those overdue or due within N days (default 7) counts checked boxes, comments and commits to the task's folder. Prints each issue as on track, watch or nudge, a nudge list, and the comments that tag you and have no reply yet (added to the session's task list). Read-only. The due-date and checklist conventions it reads are listed at the top of the file, to edit. | Optional; needs `gh` logged in                                                                                                                  | Who needs a nudge, in a ten-second read, and no unanswered question left behind     |
+| `commands/organize.md` | Defines `/organize` with modes (plan, week, check, done, wrap, inbox, breakdown, switch, estimate, away): reads Markdown task files with YAML frontmatter and proposes a time-blocked day, sorts a list of loose items into tasks, splits a vague task into concrete steps, and closes the day by carrying unfinished work forward. Asks before changing any task file; never moves a due date silently. Settings (task folder, workday) are lines in the project's `CLAUDE.md`. | Optional | A realistic plan for the day in one prompt |
+| `commands/latex-revise.md` | Defines `/latex-revise <file> <request>`: applies the requested change with minimal edits (no rewording of untouched text), rebuilds with `/compile-tex`, and reports the PDF path. For Beamer, an appendix slide is linked both ways. | Optional | Edits you can review in a short diff |
 
 **`project-template/`: copied into each new project**
 
@@ -470,6 +521,18 @@ as above, or fork it on GitHub to keep your version under version control
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------- |
 | `build-style-guide.md`    | Has Claude read documents you wrote yourself, describe the patterns with quoted examples, write them as rules into `style/writing-style.md`, and ask about what it is unsure of.                     | Optional                                                       | A first style guide in one session                 |
 | `merge-existing-setup.md` | Has Claude back up your `~/.claude` files, classify each incoming rule as add, merge, conflict or skip, ask you about every conflict, write only after your approval, and verify in a fresh session. | Only if `~/.claude/CLAUDE.md` or `settings.json` already exist | The kit adopted without losing your existing rules |
+| `multi-session-plan.md` | A plan template for a task split across several sessions: the DEPENDENCIES table (session, model, what it waits for, what it blocks), the prompt for each session, the WAITING block for dependent sessions, and a worked example. | Optional | Several sessions running at once without you starting each by hand |
+| `manager-protocol.md` | The rules each worker session and the manager follow: the message lines (OPEN, DONE, NEEDS YOU, CLOSE OK), the handoff contents, the format for asking you to rule on something, and lessons recorded before closing. | Optional; with `multi-session-plan.md` | One window to watch instead of many |
+
+**`tools/` and `examples/`: larger pieces, each with its own README**
+
+| Folder | What it does | Needed? | What it gets you |
+| --- | --- | --- | --- |
+| `tools/slurm-watch/` | A watcher Claude runs as a background command: polls a Slurm job over SSH, prints nothing while it is healthy, and exits with one line and an exit code when the job ends, runs out of memory, sits idle, stops writing checkpoints or is blocked in the queue. Includes an optional hook that blocks hand-polling a watched job, and tests with a fake cluster. | Only if you run cluster jobs | Waiting on a long job without spending tokens |
+| `tools/zotero/` | Python scripts for `/zotero`: sync a local index of the library, update metadata from a `.bib`, and look for newer or published versions of working papers. Every write is a dry run first, then applied only with your approval, then re-read. | Only with `/zotero` | A library that stays in step with your `.bib` |
+| `examples/morning-plan/` | A runner script and a launchd job template that run `/organize` unattended each weekday morning and save the plan to a dated file. You load the job yourself. | Optional; macOS | The day's plan waiting when you sit down |
+| `examples/coordination/` | A skeleton coordination repository for `/press`: the manifest and one shared template (`tlog`, a colored log line in R, Python and shell that reads its settings from a per-project file). | Only with `/press` | A starting point for shared scripts |
+| `examples/mathematica-household/` | The worked example of [Part 6](#part-6-mathematica-and-vs-code): a Wolfram Language package, tests run with `wolframscript`, a parameter sweep and a notebook generated by a script. | Optional; needs Mathematica | The scripts-plus-notebook layout, ready to copy |
 
 ---
 
@@ -598,11 +661,13 @@ named are my examples of using it.
      uses `trash` and every deletion can be recovered from the Trash.
 3. **Your own slash commands.** Claude Code turns any Markdown file in
    `~/.claude/commands/` into the command `/name`, usable in every project (built in).
-   The eight in [`global/commands/`](global/commands/) are mine, as starting points:
-   three for everyday work ([`/start-task`](global/commands/start-task.md),
+   The ten in [`global/commands/`](global/commands/) are mine, as starting points:
+   four for everyday work ([`/start-task`](global/commands/start-task.md),
    [`/wrap-up`](global/commands/wrap-up.md),
-   [`/compile-tex`](global/commands/compile-tex.md)) and five larger workflows from
-   Part 4 (`/papersummarize`, `/zotero`, `/press`, `/debrief`, `/ra-check`). Write your
+   [`/compile-tex`](global/commands/compile-tex.md),
+   [`/latex-revise`](global/commands/latex-revise.md)) and six larger workflows from
+   Part 4 (`/papersummarize`, `/zotero`, `/press`, `/debrief`, `/ra-check`,
+   `/organize`). Write your
    own the third time you type the same instructions.
    *Use cases: compile a .tex file and fix warnings until clean, checking that an exam's
    point totals add up; revise a .tex file with minimal edits, then recompile; summarize a
@@ -639,6 +704,24 @@ named are my examples of using it.
      to the server that holds the real data and run it there. Claude never sees a real
      record.
 
+### VS Code extensions worth having
+
+None of these is needed for the guide; each removes a small friction that recurs every
+day. Install one from the Extensions panel (Cmd+Shift+X) or from the terminal with
+`code --install-extension <id>`.
+
+| Extension | ID | What it gets you |
+| --- | --- | --- |
+| Project Colorize | `angelluisalmaraz.project-colorize` | Colors the title bar, status bar and activity bar of each project window (command palette: "Project Colorize: Choose Colors Manually"). Pair it with the built-in `/color` in Claude Code: give the window and the Claude session in it the same color, and with several projects open you see at a glance which session belongs to which window. |
+| Markdown All in One | `yzhang.markdown-all-in-one` | Shortcuts, list continuation, a table of contents that updates itself, and math preview for Markdown. Useful because notes files, `CLAUDE.md` and plans are all Markdown. |
+| Partial Diff | `ryu1kn.partial-diff` | Compares two selections, in one file or across files, or a selection with the clipboard (right-click menu). Handy to compare two versions of a paragraph, or Claude's rewrite with your original, before you accept either. |
+| Grammarly | `znck.grammarly` | Grammar and style checks inside `.tex` and `.md` files. It sends the text it checks to Grammarly's servers: exclude confidential files (setting `grammarly.files.exclude`) or keep it paused (`grammarly.startTextCheckInPausedState`) in projects with confidential drafts. |
+| Rainbow CSV | `mechatroner.rainbow-csv` | Colors each column of a CSV or TSV file, aligns columns, lints the file ("CSV Lint") and runs SQL-like queries on it. The quickest way to inspect a table Claude wrote before you trust it. |
+
+Two more that later parts use: Remote - SSH (`ms-vscode-remote.remote-ssh`, see
+[Part 5](#part-5-working-on-a-cluster-from-vs-code)) and Wolfram Language
+(`wolframresearch.wolfram`, see [Part 6](#part-6-mathematica-and-vs-code)).
+
 ---
 
 ## Part 4. Advanced use cases
@@ -647,8 +730,54 @@ What I do with this setup once the basics are habit. The commands and files name
 are my own, written to work on my machines and in my projects: read them as examples
 and change them as you need. None of them is needed for the setup. The requirements are
 [Part 1, Steps 1 to 4](#part-1-setup-step-by-step); everything else is optional. Each
-item says which parts are built into Claude Code, which are my examples in this
-repository (linked), and which are tools of mine that this repository does not include.
+item says which parts are built into Claude Code and which are my examples in this
+repository (linked).
+
+### The largest productivity gain: a plan, many sessions, one manager
+
+Of everything in this guide, this way of working saves me the most time. A task that
+splits into parts (clean the data, estimate, make the tables, write the section) runs as
+several Claude Code sessions at once, and I talk to only one of them.
+
+1. **One Markdown plan.** The plan file opens with a DEPENDENCIES block: a table of
+   sessions with the model and effort for each, which message each one waits for, and
+   which sessions it blocks. Template and a worked example:
+   [`prompts/multi-session-plan.md`](prompts/multi-session-plan.md).
+2. **Create every session up front, each with a name.** I start all of them at once,
+   including the ones that must wait, and give each its prompt from the plan:
+   `claude --bg -n <name> "<prompt>"` for a background session, or `/rename <name>` in
+   an interactive one. A dependent session does the preparation its prompt allows (read
+   the inputs, write the code and its tests), then stops and waits. No session waits for
+   me to remember to start it.
+3. **Close them; keep only the manager open.** Once the sessions are created, I close
+   their windows. A session that is closed keeps its conversation and can be reopened
+   with its name. The one window I keep is the manager session.
+4. **Sessions message each other, and the manager wakes the next one.** When a session
+   finishes, it sends its handoff as a message (commit hashes, row counts, file paths:
+   everything the next session needs to check its inputs). The manager forwards it to
+   the session that was waiting for it, reopening that session if it was closed, and it
+   relays to me only what needs my decision. Messages between sessions are built in
+   (the SendMessage and ListAgents tools inside Claude, `claude agents` in the terminal).
+5. **Names are the addresses.** A message goes to a session by its name, so naming each
+   session (`-n <name>` or `/rename`) is not cosmetic: it is the step that makes the
+   whole scheme work. Two live sessions with the same name, or one with none, cannot be
+   reached reliably.
+6. **Lessons before closing.** Each session writes what it learned into the project's
+   lessons log and commits it before it reports `CLOSE OK`, so the next plan starts
+   from them.
+
+Why it pays: the sessions run in parallel while I do other work, each one keeps a small
+context focused on one task (cheaper and fewer mistakes), and my attention goes only to
+the decisions that are mine. Independent sessions that edit files each work on their own
+git branch (a worktree, `claude --worktree`, built in).
+
+My examples: the rules each worker and the manager follow, with the exact message lines
+(OPEN, DONE, NEEDS YOU, CLOSE OK) and the format for asking you to rule on something, in
+[`prompts/manager-protocol.md`](prompts/manager-protocol.md); and
+[`scripts/peer-session.sh`](scripts/peer-session.sh), which lists, reopens and stops
+sessions by name and flags one that stalled.
+
+### More use cases
 
 1. **One copy of every shared script.** A script reused in several projects lives once,
    in a templates folder of a coordination repo. A slash command of mine
@@ -656,7 +785,9 @@ repository (linked), and which are tools of mine that this repository does not i
    that have drifted, so a fix made once reaches every project. The scripts read
    project-specific values (environment name, paths) from a small per-project config
    file instead of hardcoding them, so the same copy runs in every repo. Generic version:
-   [`global/commands/press.md`](global/commands/press.md).
+   [`global/commands/press.md`](global/commands/press.md), and a coordination repo
+   skeleton with its manifest and one template in
+   [`examples/coordination/`](examples/coordination/).
 2. **Meetings to assigned tasks.** A small package I wrote
    ([debriefr](https://github.com/alopezespino/debriefr)) and a slash command of mine
    ([`/debrief`](global/commands/debrief.md)): the recording becomes a transcript
@@ -679,8 +810,10 @@ repository (linked), and which are tools of mine that this repository does not i
    Generic version: [`global/commands/ra-check.md`](global/commands/ra-check.md).
 4. **A personal control center.** A plain-Markdown repo with inbox, tasks, projects,
    archive and journal folders. I drop a scan in the inbox and Claude files it; a planner
-   command of mine reads open tasks and deadlines and proposes the day, and a scheduled
-   job on my Mac runs it each morning (neither is in this repository). Sensitive folders are protected as in
+   command of mine ([`/organize`](global/commands/organize.md)) reads open tasks and
+   deadlines and proposes the day, and a scheduled job on my Mac
+   ([`examples/morning-plan/`](examples/morning-plan/), launchd) runs it each morning.
+   Sensitive folders are protected as in
    [Part 3](#part-3-easy-extras-with-a-large-payoff), item 7: filenames visible, contents
    not.
 5. **A literature pipeline.** PDFs become Markdown, then LaTeX working notes in one folder
@@ -689,19 +822,17 @@ repository (linked), and which are tools of mine that this repository does not i
    [`project-template/litrev/GUIDELINES.md`](project-template/litrev/GUIDELINES.md)).
    Scripts of mine keep the reference manager (Zotero) in sync with the project's `.bib`
    file and check for newer versions of working papers. Generic versions:
-   [`global/commands/papersummarize.md`](global/commands/papersummarize.md) and
-   [`global/commands/zotero.md`](global/commands/zotero.md).
-6. **Several sessions working in parallel.** Independent tasks run in separate sessions,
-   each on its own git branch (a worktree), and the sessions message each other: a
-   dependent task starts when its predecessor sends its handoff (commit hashes, counts).
-   Background sessions (`claude --bg`), worktrees (`claude --worktree`) and messages
-   between sessions are built in. The protocol on top is mine and not in this
-   repository: one manager session relays to me only what needs my decision, and every
-   session records its lessons before it closes.
+   [`global/commands/papersummarize.md`](global/commands/papersummarize.md),
+   [`global/commands/zotero.md`](global/commands/zotero.md) and the scripts in
+   [`tools/zotero/`](tools/zotero/).
+6. **Several sessions working in parallel.** See
+   [the first subsection of this part](#the-largest-productivity-gain-a-plan-many-sessions-one-manager).
 7. **Laptop to cluster.** Code developed on fake data locally runs on a computing
    cluster. Long jobs save checkpoints so a kill loses one step, not the run. A watcher
-   script of mine (not in this repository) runs as a built-in background command and
-   wakes Claude only when the job finishes or fails, so waiting costs no tokens.
+   script of mine ([`tools/slurm-watch/`](tools/slurm-watch/)) runs as a built-in
+   background command and wakes Claude only when the job finishes or fails, so waiting
+   costs no tokens. The setup (SSH key, host alias, VS Code Remote - SSH) is in
+   [Part 5](#part-5-working-on-a-cluster-from-vs-code).
 8. **Fresh-eyes reviews.** A new subagent (built in) that has not seen my reasoning reads
    a draft, a proof or a set of results and reports what is wrong. It does not anchor on my
    conclusions the way the working session does.
@@ -711,6 +842,158 @@ repository (linked), and which are tools of mine that this repository does not i
    fresh session with test questions. This repository is that kit:
    [`global/CLAUDE.md`](global/CLAUDE.md) and
    [`prompts/merge-existing-setup.md`](prompts/merge-existing-setup.md).
+
+---
+
+## Part 5. Working on a cluster from VS Code
+
+How I work on a computing cluster (HPC) from the laptop: an SSH key so no password is
+typed, a short host alias, VS Code's Remote - SSH extension to see the cluster's files,
+and Claude on the laptop driving the cluster over SSH. This part is self-contained. Two
+posts on my website cover the background at more length:
+[Command Line Basics](https://alopezespino.github.io/bash/) (navigating, pipes,
+redirection, scripts) and
+[SSH Keys: A Guide to Remote Server Access](https://alopezespino.github.io/sshconfig/)
+(keys and the config file, step by step). Replace `mycluster`, `<user>` and
+`login.cluster.example.edu` below with your alias, your username and your cluster's
+login address.
+
+**Step 1. Create an SSH key and copy it to the cluster** (once per laptop).
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/mycluster_ed25519
+ssh-copy-id -i ~/.ssh/mycluster_ed25519.pub \
+  <user>@login.cluster.example.edu
+```
+
+| Line | What it does |
+| --- | --- |
+| `ssh-keygen -t ed25519 -f <file>` | Creates a key pair: the private key `<file>` (never leaves the laptop) and the public key `<file>.pub`. It asks for a passphrase: set one; Step 2 stores it in the macOS Keychain so you type it once. |
+| `ssh-copy-id -i <file>.pub <user>@<host>` | Logs in once with your password and appends the public key to `~/.ssh/authorized_keys` on the cluster. Some clusters want the key uploaded through a web portal instead: check their documentation. |
+
+**Step 2. Give the cluster a short alias** in `~/.ssh/config` (create the file if it does
+not exist). Write it yourself: my example settings deny Claude any access to `~/.ssh`.
+
+```
+Host mycluster
+  HostName login.cluster.example.edu
+  User <user>
+  IdentityFile ~/.ssh/mycluster_ed25519
+  AddKeysToAgent yes
+  UseKeychain yes
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-%r@%h-%p
+  ControlPersist 4h
+  ServerAliveInterval 60
+```
+
+| Line | What it does |
+| --- | --- |
+| `Host mycluster` | The alias: `ssh mycluster` now replaces `ssh <user>@login.cluster.example.edu`, and VS Code lists it by this name. |
+| `HostName`, `User`, `IdentityFile` | The real address, your username there, and the private key to use. |
+| `AddKeysToAgent yes`, `UseKeychain yes` | Load the key into the SSH agent on first use and keep its passphrase in the macOS Keychain (macOS only). |
+| `ControlMaster`, `ControlPath`, `ControlPersist` | Reuse one authenticated connection for later `ssh`, `scp` and VS Code connections for 4 hours. With two-factor login, you approve once instead of at every command. |
+| `ServerAliveInterval 60` | Sends a keep-alive every minute, so an idle connection is not dropped. |
+
+Check it with `ssh mycluster hostname` (prints the login node's name), then with
+`ssh -o BatchMode=yes mycluster true && echo ok`. The second fails instead of asking for
+anything; it must print `ok` before Claude can use the cluster, since Claude cannot type
+a password.
+
+**Step 3. Open the cluster in VS Code.** Install Remote - SSH
+(`code --install-extension ms-vscode-remote.remote-ssh`). Then Cmd+Shift+P, "Remote-SSH:
+Connect to Host...", and pick `mycluster` (the list comes from `~/.ssh/config`). The
+window reopens connected: the Explorer shows the cluster's files, the integrated terminal
+is a shell on the cluster, and the bottom-left corner names the host. File > Open Folder
+opens a folder on the cluster.
+
+- The first connection installs a small VS Code server in your cluster home
+  (`~/.vscode-server`, a few hundred MB). If your home quota is small, the setting
+  `remote.SSH.serverInstallPath` moves it.
+- Extensions install separately on the remote side: in the Extensions panel, "Install in
+  SSH: mycluster".
+- With two-factor login, set `"remote.SSH.showLoginTerminal": true` in VS Code's
+  settings, so the prompt appears in a terminal you can answer.
+- A Remote - SSH window, and everything run in its terminal, runs on a login node shared
+  by every user. Edit, browse and submit jobs there; run computations through the
+  scheduler (`sbatch`, `salloc`), never on the login node. Close the remote window when
+  you are done.
+
+**Step 4. Decide where Claude runs.** My split:
+
+- **Code moves only through git.** I write and test code on the laptop against fake data
+  with the real structure (Part 3, item 7), commit and push; the cluster's copy only
+  pulls. A file edited in both places ends in a conflict, and a run that used an
+  unpushed change cannot be reproduced.
+- **Claude runs on the laptop and drives the cluster over SSH.** Because Step 2 works
+  without a prompt, Claude can run `ssh mycluster 'cd ~/myproject && git pull && sbatch
+  jobs/run.sh'`, read a job's log, and cancel a job, with each command shown to you
+  first. The project's `CLAUDE.md` records the alias, the cluster paths, the
+  environment's interpreter path and the scheduler's partitions, so no session has to
+  rediscover them.
+- **The Remote - SSH window is for looking:** logs, outputs, and files that exist only on
+  the cluster.
+- **Waiting costs nothing.** My example watcher
+  [`tools/slurm-watch`](tools/slurm-watch/) runs as a built-in background command, prints
+  nothing while the job is healthy, and wakes Claude once when it ends or fails
+  (out of memory, stalled, blocked in the queue).
+- Claude Code can also be installed and run on the cluster from the remote terminal. I
+  do not: it would run on a shared login node, with the cluster's data in reach.
+
+Two traps. A command sent as `ssh mycluster '<command>'` starts a non-login shell, so
+modules and conda environments loaded in your login files may be missing: call the
+interpreter by its full path (`~/micromamba/envs/myenv/bin/python`) or wrap the command
+in `bash -lc '...'`. And a cluster usually has several login nodes behind one address: a
+`tmux` session you started on one is not visible from another, so name the node
+(`HostName login03.cluster.example.edu`) when you need to come back to it.
+
+---
+
+## Part 6. Mathematica and VS Code
+
+I keep Wolfram Language work in two kinds of files, and Claude edits only one of them.
+
+- **Package and script files (`.wl`, `.wls`, `.wlt`) hold everything that must be
+  right:** the model, the solver, the tests and batch runs. They are plain text, so
+  `git diff` shows exactly what changed, and I develop them in VS Code, where Claude can
+  edit them and run them from the terminal with `wolframscript` (it ships with
+  Mathematica).
+- **Notebooks (`.nb`) are for looking:** they load the package with `Get`, then hold a
+  `Manipulate`, a table or a plot. They hold no model code, and I open them in
+  Mathematica.
+- **Claude does not hand-edit a `.nb` file.** A notebook is a nested box expression with
+  cached output, so its diffs are unreadable and a small edit can corrupt it. When a
+  notebook should be maintained by Claude, a short `.wls` script generates it (checking
+  each input cell with `SyntaxQ`) and saves it without outputs.
+
+**Setup.** Install the Wolfram Language extension by Wolfram Research
+(`code --install-extension wolframresearch.wolfram`) for syntax highlighting and a
+language server on `.wl`, `.wls` and `.wlt` files, and point it at your kernel in VS
+Code's `settings.json`:
+
+```json
+"wolfram.systemKernel": "/Applications/Mathematica.app/Contents/MacOS/WolframKernel"
+```
+
+**The loop with Claude.**
+
+1. Ask Claude to change the model in `src/`.
+2. Claude runs the tests in the terminal (`wolframscript -file tests/run.wls`) and reads
+   the PASS/FAIL lines and the exit code.
+3. When the tests pass, rerun the notebook's first cell (it clears the package's symbols
+   and loads the package again) and look at the figures yourself.
+4. Long runs go in a `.wls` script that writes to `results/`, not in the notebook.
+
+**A minimal working example:**
+[`examples/mathematica-household/`](examples/mathematica-household/). A couple splits
+its time between market work and home production; a gender-role bias parameter adds a
+utility cost when the wife earns more than the husband, so the response of each spouse's
+market hours to their relative wage changes once she out-earns him. The folder holds the
+package, 7 tests, a parameter sweep that writes a figure, and a notebook generated by a
+script. The application is inspired by my dear friend GeeYoung Oh's paper "Allocating
+Time As A Couple: Effects of Relative Wages and Gender Role Bias"
+([her research](https://sites.google.com/view/geeyoungoh/research)). The model in the
+example is a simplified teaching version, not the model of her paper.
 
 ---
 
