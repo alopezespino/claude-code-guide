@@ -151,7 +151,6 @@ url=https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 /bin/bash -c "$(curl -fsSL "$url")"
 ```
 
-
 | Line                                  | What it does                                                                                                                                                                                                                          | Needed?               |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | `url=...`                             | Stores the address of Homebrew's official install script in a variable, so the next line stays short enough to paste safely.                                                                                                          | Only without Homebrew |
@@ -169,7 +168,6 @@ brew install --cask mactex-no-gui
 gh auth login
 ```
 
-
 | Line                                     | What it does                                                                                                                                                                                                       | Needed?                                               |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `brew install git gh claude-code`        | Installs three command-line tools: `git` (version control; newer than the one Apple ships), `gh` (GitHub from the terminal: log in, create repos, issues, pull requests) and `claude-code` (the `claude` command). | Required                                              |
@@ -185,28 +183,31 @@ Claude Code needs a paid Claude plan; the first `claude` run opens the browser t
 
 ### Step 2. Set up VS Code
 
-1. **Extensions.**
+#### 1. Extensions
 
-   ```bash
-   code --install-extension james-yu.latex-workshop
-   code --install-extension anthropic.claude-code
-   ```
+```bash
+code --install-extension james-yu.latex-workshop
+code --install-extension anthropic.claude-code
+```
 
+| Line                                               | What it does                                                                                                                                                                                                  | Needed?                                          |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `code --install-extension james-yu.latex-workshop` | Installs LaTeX Workshop: builds on save (with latexmk by default), a PDF preview tab, a list of errors that link to the line, and SyncTeX (click in the PDF to jump to the source, and back).                 | Only for LaTeX                                   |
+| `code --install-extension anthropic.claude-code`   | Installs the Claude Code extension: Claude's proposed edits open as side-by-side diffs in the editor, and Claude can see the file and lines you have selected. If it does not connect, type `/ide` in Claude. | Optional; Claude runs in the terminal without it |
 
-   | Line                                               | What it does                                                                                                                                                                                                  | Needed?                                          |
-   | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-   | `code --install-extension james-yu.latex-workshop` | Installs LaTeX Workshop: builds on save (with latexmk by default), a PDF preview tab, a list of errors that link to the line, and SyncTeX (click in the PDF to jump to the source, and back).                 | Only for LaTeX                                   |
-   | `code --install-extension anthropic.claude-code`   | Installs the Claude Code extension: Claude's proposed edits open as side-by-side diffs in the editor, and Claude can see the file and lines you have selected. If it does not connect, type `/ide` in Claude. | Optional; Claude runs in the terminal without it |
+If the terminal says `code: command not found`, open the Command Palette (Cmd+Shift+P) and run "Shell Command: Install 'code' command in PATH".
 
-   If the terminal says `code: command not found`, open the Command Palette
-   (Cmd+Shift+P) and run "Shell Command: Install 'code' command in PATH".
-2. **Auto-save.** Claude edits files on disk. If the editor holds unsaved changes to the
-   same file, the two versions conflict. Turn on auto-save: Settings (Cmd+,), search
-   "auto save", choose `afterDelay`.
-3. **GitHub sign-in.** Click the Accounts icon (bottom left), "Sign in with GitHub". The
-   Source Control panel then shows every change Claude makes as a diff.
-4. **The three panels you will use:** Explorer (files), Source Control (diffs and
-   commits), and the integrated terminal (Ctrl+`), where Claude runs.
+#### 2. Auto-save
+
+Claude edits files on disk. If the editor holds unsaved changes to the same file, the two versions conflict. Turn on auto-save: Settings (Cmd+,), search "auto save", choose `afterDelay`.
+
+#### 3. GitHub sign-in
+
+Click the Accounts icon (bottom left), "Sign in with GitHub". The Source Control panel then shows every change Claude makes as a diff.
+
+#### 4. The three panels you will use
+
+Explorer (files), Source Control (diffs and commits), and the integrated terminal (Ctrl+`), where Claude runs.
 
 ### Step 3. Create a project
 
@@ -219,7 +220,6 @@ cd ~/Documents/my-paper
 git init
 code .
 ```
-
 
 | Line                            | What it does                                                                                                                               | Needed?                |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
@@ -252,7 +252,6 @@ it from the Explorer and add settings inside `"settings"`, for example:
   }
 }
 ```
-
 
 | Setting                                                                         | What it does                                                                                                                                                                                   | Needed?                           |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
@@ -309,7 +308,6 @@ mkdir -p ~/.claude
 code ~/.claude/CLAUDE.md
 ```
 
-
 | Line                       | What it does                                                                            | Needed?                    |
 | ---------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------- |
 | `mkdir -p ~/.claude`       | Creates Claude Code's settings folder in your home directory, if it does not exist yet. | Required for the next line |
@@ -325,7 +323,7 @@ example:
 ```
 
 Add a rule the second time the same mistake happens
-([Part 2](#part-2-best-practices-fewer-tokens-a-smarter-claude), item 13).
+([Part 2, 13](#13-global-rules-that-carry-an-origin)).
 
 **Permissions.** By default Claude asks before each command and edit. At a prompt, the
 "don't ask again" option saves that rule in the project's `.claude/settings.local.json`:
@@ -338,7 +336,6 @@ What it gets you: rules stated once and followed everywhere; fewer prompts for s
 commands and hard stops for dangerous ones.
 
 ### Step 5. Know what each context document is for
-
 
 | File                     | Read by               | Holds                                                                         |
 | -------------------------- | ----------------------- | ------------------------------------------------------------------------------- |
@@ -353,7 +350,7 @@ Claude updates it as it works. Keep task files in a `notes/` folder (`mkdir note
 with the same sections: Objective (what "done" means and how it will be checked),
 Inputs, Outputs, Decisions, Progress, Surprises, Follow-ups. The style guide is optional;
 Claude can draft one from your own writing
-([Part 2](#part-2-best-practices-fewer-tokens-a-smarter-claude), item 12).
+([Part 2, 12](#12-writing-style-guides-one-per-document-type)).
 
 ### Step 6. Run your first task end to end
 
@@ -398,7 +395,6 @@ scripts/install-global.sh
 scripts/new-project.sh ~/Documents/my-paper
 ```
 
-
 | Line                                          | What it does                                                                                                                                                                                                                                                                                                                                                  | Needed?                                                               |
 | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `git clone <url> ~/claude-code-guide`         | Downloads this repository into a folder in your home directory.                                                                                                                                                                                                                                                                                               | Required for the scripts below                                        |
@@ -429,7 +425,7 @@ Then revise what was installed. Every file is plain text; change it in place:
   `.claude/settings.json`, and pick a title-bar color in the workspace file.
 
 To check what Claude loaded, use the last bullet of
-[Part 2](#part-2-best-practices-fewer-tokens-a-smarter-claude), item 1.
+[Part 2, 1](#1-stay-in-control-while-you-learn).
 
 **Make the kit yours first.** For every new project to start from your own preferences,
 keep your own copy of this repository and edit it before running the scripts. Clone it
@@ -481,7 +477,6 @@ Use this only if your build stops at the biber step with that error.
 
 **`global/`: installed into `~/.claude/`, applies to every project**
 
-
 | File                         | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Needed?                                                                                                                                         | What it gets you                                                                    |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | `CLAUDE.md`                  | Starter personal rules: short answers, minimal edits, `trash` instead of `rm`, a commit table before any push, no secrets in files, notes and lessons files, narrow reading, subagents, paste-safe commands, and a section for your own preferences.                                                                                                                                                                                                                                                     | Recommended; edit it freely                                                                                                                     | Claude follows your rules in every session without being told again                 |
@@ -501,7 +496,6 @@ Use this only if your build stops at the biber step with that error.
 
 **`project-template/`: copied into each new project**
 
-
 | File                      | What it does                                                                                                                                                                                                                                                            | Needed?                                                | What it gets you                                                                            |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `CLAUDE.md`               | Sections Claude reads at the start of every session: what the project is, a folder map, the build command, the environment, conventions, where notes live, and the settings the example commands read (main file, bibliography, literature folder, PDF converter, download queue).                                                                                                              | Recommended                                            | Claude knows the project from the first message                                             |
@@ -517,7 +511,6 @@ Use this only if your build stops at the biber step with that error.
 
 **`prompts/`: text to paste into a Claude session**
 
-
 | File                      | What it does                                                                                                                                                                                         | Needed?                                                        | What it gets you                                   |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------- |
 | `build-style-guide.md`    | Has Claude read documents you wrote yourself, describe the patterns with quoted examples, write them as rules into `style/writing-style.md`, and ask about what it is unsure of.                     | Optional                                                       | A first style guide in one session                 |
@@ -532,7 +525,7 @@ Use this only if your build stops at the biber step with that error.
 | `tools/slurm-watch/` | A watcher Claude runs as a background command: polls a Slurm job over SSH, prints nothing while it is healthy, and exits with one line and an exit code when the job ends, runs out of memory, sits idle, stops writing checkpoints or is blocked in the queue. Includes an optional hook that blocks hand-polling a watched job, and tests with a fake cluster. | Only if you run cluster jobs | Waiting on a long job without spending tokens |
 | `tools/zotero/` | Python scripts for `/zotero`: sync a local index of the library, update metadata from a `.bib`, and look for newer or published versions of working papers. Every write is a dry run first, then applied only with your approval, then re-read. | Only with `/zotero` | A library that stays in step with your `.bib` |
 | `examples/coordination/` | A skeleton coordination repository for `/press`: the manifest and one shared template (`tlog`, a colored log line in R, Python and shell that reads its settings from a per-project file). | Only with `/press` | A starting point for shared scripts |
-| `examples/shared-data-repo/` | A shared repository that builds a data baseline (from made-up data) and a project that adds it as a git submodule and filters it further; see [More use cases](#a-shared-data-repository-as-a-submodule). | Optional; needs R | The layout for data or pipelines shared by several projects |
+| `examples/shared-data-repo/` | A shared repository that builds a data baseline (from made-up data) and a project that adds it as a git submodule and filters it further; see [More use cases](#2-a-shared-data-repository-as-a-submodule). | Optional; needs R | The layout for data or pipelines shared by several projects |
 | `examples/mathematica-household/` | The worked example of [Part 6](#part-6-mathematica-and-vs-code): a Wolfram Language package, tests run with `wolframscript`, a parameter sweep and a notebook generated by a script. | Optional; needs Mathematica | The scripts-plus-notebook layout, ready to copy |
 
 ---
@@ -543,79 +536,78 @@ Every turn re-sends the whole conversation. A long conversation costs more per t
 drifts more. The rules below keep the conversation short and the files rich. They use
 built-in keys, commands and features; where an item names a file of mine, it says so.
 
-1. **Stay in control while you learn.**
-   - **Default mode asks before every command and edit.** At that permission prompt,
-     **Ctrl+E** gives a plain-language explanation of the command before you accept it
-     (the prompt's footer shows the key). This is the best way to learn the terminal
-     while in control.
-   - **Shift+Tab** cycles the modes. Plan mode reads and proposes without editing: use
-     it before any large change.
-   - **Esc Esc** rewinds to an earlier point; **Ctrl+C** stops Claude mid-step;
-     **Ctrl+O** opens the full transcript of what it ran and saw; **Ctrl+G** opens your
-     editor for a long prompt.
-   - **`@path/to/file`** in a prompt points Claude at a file.
-   - **Read diffs before accepting.** Commit before and after each change, so any change
-     can be undone with git.
-   - To check that your rules loaded, start a new session and ask "Which of my CLAUDE.md
-     rules apply to this task?"
-2. **One task per session.** `/clear` at each task boundary; `/compact` at a natural break
-   before a long session fills its context. `/rename <name>` names the session for its
-   task, and `/resume` reopens it later.
-3. **State lives in files, not in the transcript.** Ask Claude to write findings into the
-   task's notes file as it finds them, and update the notes before `/clear`. The
-   transcript is lost at `/clear`; the file is not.
-4. **Point, do not paste.** Name the file and section (`@chapter3.tex`, "the proof of
-   Lemma 2"). For a question about a long file, ask Claude to send a subagent to read it
-   and report the answer, so the bulk text stays out of the main session.
-5. **Subagents for reading in parallel, on cheaper models.** "Send three agents to read
-   X, Y and Z and report back." A small model is enough for finding and quoting; keep the
-   main model for synthesis and edits.
-   *Use case: this guide was assembled by four agents reading in parallel: a student
-   guide, an onboarding kit, research repos and a global configuration.*
-6. **Match the model to the turn.** `/model` picks the model; `/effort` lowers the effort
-   for routine turns, which saves usage.
-7. **`/btw` for side questions.** `/btw what does this flag do?` gets an answer without
-   pulling the main task off track.
-8. **Say what "done" means.** "Done when it compiles with no warnings and every citation
-   resolves" lets Claude check its own work. Use Plan mode for anything large: a rejected
-   plan costs far less than a rejected implementation.
-9. **Convert PDFs to Markdown before Claude reads them.** A converter such as
-   [marker](https://github.com/datalab-to/marker) (an open-source tool, separate from
-   Claude Code) turns math-heavy PDFs into text with the equations in LaTeX: cheaper and
-   more accurate than page images. My example
-   [`/papersummarize`](global/commands/papersummarize.md) runs it.
-10. **Never let Claude poll a long job.** Each check is a full turn. Ask for a background
-    command that exits when the job ends, so Claude is woken once.
-11. **Memory for durable facts.** Claude Code keeps memory per project; say "remember
-    that..." for preferences and facts that outlive the task (who is who, a journal's
-    house style). Notes hold the task detail; memory holds the facts.
-12. **Writing-style guides, one per document type.** Research notes, paper summaries and
-    paper drafts each get their own rules (structure, notation, tone, punctuation). Build
-    them from your own pre-AI writing with my example prompt
-    [`prompts/build-style-guide.md`](prompts/build-style-guide.md): Claude reads a
-    few documents you wrote by hand, drafts the rules, and you correct them.
-    *Use case: a paper summary comes out with the same structure and voice as the ones I
-    wrote by hand years earlier.*
-13. **Global rules that carry an origin.** `~/.claude/CLAUDE.md` is loaded in every
-    session of every project, so keep it to rules that apply everywhere and move project
-    detail into the repo's `CLAUDE.md`. Give each rule a reason, and an "Origin" line
-    (date, what went wrong) when it comes from a real mistake. Add a rule the second time
-    the same mistake happens. A rule without a reason gets ignored or argued away.
-14. **A lessons log and numbered decisions.** `notes/lessons.md` holds numbered entries
-    with symptom, cause, fix and the rule it implies; lessons that hold everywhere move to
-    the global `CLAUDE.md`. Decisions D1, D2, ... in a task file stop the same choice from
-    being re-argued every session.
-15. **Precise language in notes.** Numbers instead of adjectives ("compiles in 40 s, 3
-    warnings left", not "almost there"). Later sessions read notes as fact.
+### 1. Stay in control while you learn
+
+- **Default mode asks before every command and edit.** At that permission prompt, **Ctrl+E** gives a plain-language explanation of the command before you accept it (the prompt's footer shows the key). This is the best way to learn the terminal while in control.
+- **Shift+Tab** cycles the modes. Plan mode reads and proposes without editing: use it before any large change.
+- **Esc Esc** rewinds to an earlier point; **Ctrl+C** stops Claude mid-step; **Ctrl+O** opens the full transcript of what it ran and saw; **Ctrl+G** opens your editor for a long prompt.
+- **`@path/to/file`** in a prompt points Claude at a file.
+- **Read diffs before accepting.** Commit before and after each change, so any change can be undone with git.
+- To check that your rules loaded, start a new session and ask "Which of my CLAUDE.md rules apply to this task?"
+
+### 2. One task per session
+
+`/clear` at each task boundary; `/compact` at a natural break before a long session fills its context. `/rename <name>` names the session for its task, and `/resume` reopens it later.
+
+### 3. State lives in files, not in the transcript
+
+Ask Claude to write findings into the task's notes file as it finds them, and update the notes before `/clear`. The transcript is lost at `/clear`; the file is not.
+
+### 4. Point, do not paste
+
+Name the file and section (`@chapter3.tex`, "the proof of Lemma 2"). For a question about a long file, ask Claude to send a subagent to read it and report the answer, so the bulk text stays out of the main session.
+
+### 5. Subagents for reading in parallel, on cheaper models
+
+"Send three agents to read X, Y and Z and report back." A small model is enough for finding and quoting; keep the main model for synthesis and edits. *Use case: this guide was assembled by four agents reading in parallel: a student guide, an onboarding kit, research repos and a global configuration.*
+
+### 6. Match the model to the turn
+
+`/model` picks the model; `/effort` lowers the effort for routine turns, which saves usage.
+
+### 7. `/btw` for side questions
+
+`/btw what does this flag do?` gets an answer without pulling the main task off track.
+
+### 8. Say what "done" means
+
+"Done when it compiles with no warnings and every citation resolves" lets Claude check its own work. Use Plan mode for anything large: a rejected plan costs far less than a rejected implementation.
+
+### 9. Convert PDFs to Markdown before Claude reads them
+
+A converter such as [marker](https://github.com/datalab-to/marker) (an open-source tool, separate from Claude Code) turns math-heavy PDFs into text with the equations in LaTeX: cheaper and more accurate than page images. My example [`/papersummarize`](global/commands/papersummarize.md) runs it.
+
+### 10. Never let Claude poll a long job
+
+Each check is a full turn. Ask for a background command that exits when the job ends, so Claude is woken once.
+
+### 11. Memory for durable facts
+
+Claude Code keeps memory per project; say "remember that..." for preferences and facts that outlive the task (who is who, a journal's house style). Notes hold the task detail; memory holds the facts.
+
+### 12. Writing-style guides, one per document type
+
+Research notes, paper summaries and paper drafts each get their own rules (structure, notation, tone, punctuation). Build them from your own pre-AI writing with my example prompt [`prompts/build-style-guide.md`](prompts/build-style-guide.md): Claude reads a few documents you wrote by hand, drafts the rules, and you correct them. *Use case: a paper summary comes out with the same structure and voice as the ones I wrote by hand years earlier.*
+
+### 13. Global rules that carry an origin
+
+`~/.claude/CLAUDE.md` is loaded in every session of every project, so keep it to rules that apply everywhere and move project detail into the repo's `CLAUDE.md`. Give each rule a reason, and an "Origin" line (date, what went wrong) when it comes from a real mistake. Add a rule the second time the same mistake happens. A rule without a reason gets ignored or argued away.
+
+### 14. A lessons log and numbered decisions
+
+`notes/lessons.md` holds numbered entries with symptom, cause, fix and the rule it implies; lessons that hold everywhere move to the global `CLAUDE.md`. Decisions D1, D2, ... in a task file stop the same choice from being re-argued every session.
+
+### 15. Precise language in notes
+
+Numbers instead of adjectives ("compiles in 40 s, 3 warnings left", not "almost there"). Later sessions read notes as fact.
 
 ### Leverage Claude's capabilities with slash commands
 
 A word typed after `/` at the start of a prompt runs a slash command. Type `/` alone to
 see them all with a one-line description. Every command in the table below is built into
 Claude Code; none comes from this repository. Commands you add yourself, such as my
-examples (Part 3, item 3), appear in the same list. These are the built-in ones I use
+examples ([Part 3, 3](#3-your-own-slash-commands)), appear in the same list. These are the built-in ones I use
 most, in the order a session meets them.
-
 
 | Command                   | What it does                                                                                                                                                                | When I use it                                                                                    |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
@@ -645,65 +637,47 @@ most, in the order a session meets them.
 Each item is a built-in feature (or, in items 6 and 7, a GitHub or macOS one). The files
 named are my examples of using it.
 
-1. **Permissions files.** Permissions are built in (Step 4). My example files
-   [`global/settings.json`](global/settings.json) and
-   [`project-template/.claude/settings.json`](project-template/.claude/settings.json)
-   hold an allow list for routine safe commands (latexmk, git status, git diff), so
-   Claude stops asking; an ask list (`git push` always asks); and deny rules for what
-   Claude must never do (`-shell-escape`, reading `~/.ssh`, reading the project's
-   `confidential/` folder).
-2. **Hooks.** Claude Code runs a script of your choice at fixed points, such as before
-   each shell command or when it waits for you (a built-in feature; the scripts are
-   yours). My two example hooks, registered in
-   [`global/settings.json`](global/settings.json):
-   - [`notify-waiting.sh`](global/hooks/notify-waiting.sh): a macOS notification when
-     Claude finishes or needs you, so you can walk away while it works;
-   - [`block-rm.sh`](global/hooks/block-rm.sh): refuses `rm -r` and `rm -f`, so Claude
-     uses `trash` and every deletion can be recovered from the Trash.
-3. **Your own slash commands.** Claude Code turns any Markdown file in
-   `~/.claude/commands/` into the command `/name`, usable in every project (built in).
-   The ten in [`global/commands/`](global/commands/) are mine, as starting points:
-   four for everyday work ([`/start-task`](global/commands/start-task.md),
-   [`/wrap-up`](global/commands/wrap-up.md),
-   [`/compile-tex`](global/commands/compile-tex.md),
-   [`/latex-revise`](global/commands/latex-revise.md)) and six larger workflows from
-   Part 4 (`/papersummarize`, `/zotero`, `/press`, `/debrief`, `/ra-check`,
-   `/organize`). Write your
-   own the third time you type the same instructions.
-   *Use cases: compile a .tex file and fix warnings until clean, checking that an exam's
-   point totals add up; revise a .tex file with minimal edits, then recompile; summarize a
-   paper into LaTeX working notes.*
-4. **Named, colored sessions.** `/rename` per task and `/color` per session, so several
-   sessions running side by side are easy to tell apart and to find again with `/resume`.
-5. **`/remote-control`.** Continue the same session from your phone or claude.ai/code, for
-   example to approve a step while away from the desk.
-6. **GitHub issues as the task list** (GitHub features). One issue per task; `closes #N` in the commit that
-   finishes it closes the issue. A GitHub Projects board gives the overview.
-7. **Guardrails for confidential data.** Three layers, each easy:
-   - deny rules in Claude's permissions for confidential folders, so Claude does not read
-     them (my example:
-     [`project-template/.claude/settings.json`](project-template/.claude/settings.json));
-   - read permission removed at the operating-system level, so a command that slips past
-     Claude's rules still fails (Claude's rules are policy; file permissions are enforced
-     by the system):
+### 1. Permissions files
 
-     ```bash
-     chmod -R go-rwx confidential/   # other accounts on this Mac: no access
-     chmod -R u-r confidential/      # your own account, so Claude too: no reads
-     chmod -R u+r confidential/      # undo the line above when you need the files
-     ```
+Permissions are built in (Step 4). My example files [`global/settings.json`](global/settings.json) and [`project-template/.claude/settings.json`](project-template/.claude/settings.json) hold an allow list for routine safe commands (latexmk, git status, git diff), so Claude stops asking; an ask list (`git push` always asks); and deny rules for what Claude must never do (`-shell-escape`, reading `~/.ssh`, reading the project's `confidential/` folder).
 
-     `-R` applies the change to the folder and everything in it. The first line removes
-     read, write and open rights for other accounts (`g` group, `o` others); it is
-     optional on a Mac only you use. The second removes your own read right (`u` user),
-     so every program running as you, Claude included, gets "Permission denied"; use it
-     while Claude works in the project. The third restores your access. The project's
-     `.claude/settings.json` also denies shell commands that name `confidential/`, so
-     Claude cannot run the obvious `chmod` that would undo the lock;
-   - develop on fake data: write and test code locally against synthetic data with the
-     real structure (same columns, types, keys, realistic sizes), then push through git
-     to the server that holds the real data and run it there. Claude never sees a real
-     record.
+### 2. Hooks
+
+Claude Code runs a script of your choice at fixed points, such as before each shell command or when it waits for you (a built-in feature; the scripts are yours). My two example hooks, registered in [`global/settings.json`](global/settings.json):
+- [`notify-waiting.sh`](global/hooks/notify-waiting.sh): a macOS notification when Claude finishes or needs you, so you can walk away while it works;
+- [`block-rm.sh`](global/hooks/block-rm.sh): refuses `rm -r` and `rm -f`, so Claude uses `trash` and every deletion can be recovered from the Trash.
+
+### 3. Your own slash commands
+
+Claude Code turns any Markdown file in `~/.claude/commands/` into the command `/name`, usable in every project (built in). The ten in [`global/commands/`](global/commands/) are mine, as starting points: four for everyday work ([`/start-task`](global/commands/start-task.md), [`/wrap-up`](global/commands/wrap-up.md), [`/compile-tex`](global/commands/compile-tex.md), [`/latex-revise`](global/commands/latex-revise.md)) and six larger workflows from Part 4 (`/papersummarize`, `/zotero`, `/press`, `/debrief`, `/ra-check`, `/organize`). Write your own the third time you type the same instructions. *Use cases: compile a .tex file and fix warnings until clean, checking that an exam's point totals add up; revise a .tex file with minimal edits, then recompile; summarize a paper into LaTeX working notes.*
+
+### 4. Named, colored sessions
+
+`/rename` per task and `/color` per session, so several sessions running side by side are easy to tell apart and to find again with `/resume`.
+
+### 5. `/remote-control`
+
+Continue the same session from your phone or claude.ai/code, for example to approve a step while away from the desk.
+
+### 6. GitHub issues as the task list
+
+(GitHub features). One issue per task; `closes #N` in the commit that finishes it closes the issue. A GitHub Projects board gives the overview.
+
+### 7. Guardrails for confidential data
+
+Three layers, each easy:
+
+- deny rules in Claude's permissions for confidential folders, so Claude does not read them (my example: [`project-template/.claude/settings.json`](project-template/.claude/settings.json));
+- read permission removed at the operating-system level, so a command that slips past Claude's rules still fails (Claude's rules are policy; file permissions are enforced by the system):
+
+  ```bash
+  chmod -R go-rwx confidential/   # other accounts on this Mac: no access
+  chmod -R u-r confidential/      # your own account, so Claude too: no reads
+  chmod -R u+r confidential/      # undo the line above when you need the files
+  ```
+
+  `-R` applies the change to the folder and everything in it. The first line removes read, write and open rights for other accounts (`g` group, `o` others); it is optional on a Mac only you use. The second removes your own read right (`u` user), so every program running as you, Claude included, gets "Permission denied"; use it while Claude works in the project. The third restores your access. The project's `.claude/settings.json` also denies shell commands that name `confidential/`, so Claude cannot run the obvious `chmod` that would undo the lock;
+- develop on fake data: write and test code locally against synthetic data with the real structure (same columns, types, keys, realistic sizes), then push through git to the server that holds the real data and run it there. Claude never sees a real record.
 
 ### VS Code extensions worth having
 
@@ -740,34 +714,33 @@ Of everything in this guide, this way of working saves me the most time. A task 
 splits into parts (clean the data, estimate, make the tables, write the section) runs as
 several Claude Code sessions at once, and I talk to only one of them.
 
-1. **One Markdown plan.** The plan file opens with a DEPENDENCIES block: a table of
-   sessions with the model and effort for each, which message each one waits for, and
-   which sessions it blocks. Template and a worked example:
-   [`prompts/multi-session-plan.md`](prompts/multi-session-plan.md).
-2. **Create every session up front, each with a name.** I start all of them at once,
-   including the ones that must wait, and give each its prompt from the plan:
-   `claude --bg -n <name> "<prompt>"` for a background session, or `/rename <name>` in
-   an interactive one. A dependent session does the preparation its prompt allows (read
-   the inputs, write the code and its tests), then stops and waits. No session waits for
-   me to remember to start it.
-3. **Close them; keep only the manager open.** Once the sessions are created, I close
-   their windows. A session that is closed keeps its conversation and can be reopened
-   with its name. The one window I keep is the manager session.
-4. **Sessions message each other, and the manager wakes the next one.** When a session
-   finishes, it sends its handoff as a message (commit hashes, row counts, file paths:
-   everything the next session needs to check its inputs). The manager forwards it to
-   the session that was waiting for it, reopening that session if it was closed, and it
-   relays to me only what needs my decision. Messages between sessions are built in
-   (the SendMessage and ListAgents tools inside Claude, `claude agents` in the terminal).
-5. **Names are the addresses.** A message goes to a session by its name, so naming each
-   session (`-n <name>` or `/rename`) is not cosmetic: it is the step that makes the
-   whole scheme work. Two live sessions with the same name, or one with none, cannot be
-   reached reliably.
-6. **Lessons before closing.** Each session writes what it learned into the project's
-   lessons log and commits it before it reports `CLOSE OK`, so the next plan starts
-   from them.
+#### 1. One Markdown plan
 
-Why it pays: the sessions run in parallel while I do other work, each one keeps a small
+The plan file opens with a DEPENDENCIES block: a table of sessions with the model and effort for each, which message each one waits for, and which sessions it blocks. Template and a worked example: [`prompts/multi-session-plan.md`](prompts/multi-session-plan.md).
+
+#### 2. Create every session up front, each with a name
+
+I start all of them at once, including the ones that must wait, and give each its prompt from the plan: `claude --bg -n <name> "<prompt>"` for a background session, or `/rename <name>` in an interactive one. A dependent session does the preparation its prompt allows (read the inputs, write the code and its tests), then stops and waits. No session waits for me to remember to start it.
+
+#### 3. Close them; keep only the manager open
+
+Once the sessions are created, I close their windows. A session that is closed keeps its conversation and can be reopened with its name. The one window I keep is the manager session.
+
+#### 4. Sessions message each other, and the manager wakes the next one
+
+When a session finishes, it sends its handoff as a message (commit hashes, row counts, file paths: everything the next session needs to check its inputs). The manager forwards it to the session that was waiting for it, reopening that session if it was closed, and it relays to me only what needs my decision. Messages between sessions are built in (the SendMessage and ListAgents tools inside Claude, `claude agents` in the terminal).
+
+#### 5. Names are the addresses
+
+A message goes to a session by its name, so naming each session (`-n <name>` or `/rename`) is not cosmetic: it is the step that makes the whole scheme work. Two live sessions with the same name, or one with none, cannot be reached reliably.
+
+#### 6. Lessons before closing
+
+Each session writes what it learned into the project's lessons log and commits it before it reports `CLOSE OK`, so the next plan starts from them.
+
+#### Why it pays
+
+The sessions run in parallel while I do other work, each one keeps a small
 context focused on one task (cheaper and fewer mistakes), and my attention goes only to
 the decisions that are mine. Independent sessions that edit files each work on their own
 git branch (a worktree, `claude --worktree`, built in).
@@ -780,43 +753,43 @@ sessions by name and flags one that stalled.
 
 ### More use cases
 
-#### One copy of every shared script
+#### 1. One copy of every shared script
 
 A script reused in several projects (a logging helper, a cluster launcher, a setup script) lives once, in a templates folder of a coordination repo. A slash command of mine ([`/press`](global/commands/press.md)) copies it into each project and reports copies that have drifted, so a fix made once reaches every project. The scripts read project-specific values (environment name, paths) from a small per-project config file instead of hardcoding them, so the same copy runs in every repo. Every project should run the latest version of such a script. Generic version: [`global/commands/press.md`](global/commands/press.md), and a coordination repo skeleton with its manifest and one template (`tlog`, a log helper in R, Python and shell) in [`examples/coordination/`](examples/coordination/).
 
-#### A shared data repository as a submodule
+#### 2. A shared data repository as a submodule
 
 When several projects start from the same data, a separate repository builds that baseline once: the code that reads the raw inputs, the cleaning every project agrees on, and one function the projects call to read the result. Each project adds that repository as a git submodule (built in to git) and keeps its own filters and analysis in its own code. Unlike a copied script, the submodule is pinned: the project records the exact commit of the shared repository it used, collaborators get the same version with `git clone --recurse-submodules`, and moving to a newer version is a deliberate step (`git submodule update --remote`, rerun, commit with the reason), because it changes the project's results. A fix to the baseline is made once in the shared repository and reaches each project when that project takes the new version. Generic version, with a shared repository that builds a baseline from made-up data and a project that filters it, in [`examples/shared-data-repo/`](examples/shared-data-repo/).
 
-#### Meetings to assigned tasks
+#### 3. Meetings to assigned tasks
 
 A small package I wrote ([debriefr](https://github.com/alopezespino/debriefr)) and a slash command of mine ([`/debrief`](global/commands/debrief.md)): the recording becomes a transcript with speakers identified, then a summary with an action-items table (owner, task, due date, priority), then GitHub issues assigned to each owner on the project board. After a coauthor meeting, the next steps are assigned before anyone retypes notes. Generic version: [`global/commands/debrief.md`](global/commands/debrief.md).
 
-#### Checking on research assistants
+#### 4. Checking on research assistants
 
-I coordinate research assistants through GitHub issues: one issue per task, with a due date and a checklist of steps, and a folder in the repository where the assistant pushes the work. That repository is a separate one for the assistants, parallel to the main project repository: it holds only their task folders, the inputs each task needs and the work they hand back. The assistants never change the main repository, each one sees only what the task needs, and every change they make sits in one small place that I review before bringing it into the project. A slash command of mine ([`/ra-check`](global/commands/ra-check.md)) reads the open issues, their comments and the commits to each task's folder, and prints each issue as on track, watch or nudge, with a nudge list and the comments that tag me and still have no reply. It changes nothing. My morning planning run ([A personal control center](#a-personal-control-center)) folds its output into the day's plan. Generic version: [`global/commands/ra-check.md`](global/commands/ra-check.md).
+I coordinate research assistants through GitHub issues: one issue per task, with a due date and a checklist of steps, and a folder in the repository where the assistant pushes the work. That repository is a separate one for the assistants, parallel to the main project repository: it holds only their task folders, the inputs each task needs and the work they hand back. The assistants never change the main repository, each one sees only what the task needs, and every change they make sits in one small place that I review before bringing it into the project. A slash command of mine ([`/ra-check`](global/commands/ra-check.md)) reads the open issues, their comments and the commits to each task's folder, and prints each issue as on track, watch or nudge, with a nudge list and the comments that tag me and still have no reply. It changes nothing. My morning planning run ([A personal control center](#5-a-personal-control-center)) folds its output into the day's plan. Generic version: [`global/commands/ra-check.md`](global/commands/ra-check.md).
 
-#### A personal control center
+#### 5. A personal control center
 
-A plain-Markdown repo with inbox, tasks, projects, archive and journal folders. I drop a scan in the inbox and Claude files it; a planner command of mine ([`/organize`](global/commands/organize.md)) reads open tasks and deadlines and proposes the day, and a scheduled job on my Mac (launchd) runs it each morning. Sensitive folders are protected as in [Part 3](#part-3-easy-extras-with-a-large-payoff), item 7: filenames visible, contents not.
+A plain-Markdown repo with inbox, tasks, projects, archive and journal folders. I drop a scan in the inbox and Claude files it; a planner command of mine ([`/organize`](global/commands/organize.md)) reads open tasks and deadlines and proposes the day, and a scheduled job on my Mac (launchd) runs it each morning. Sensitive folders are protected as in [Part 3, 7](#7-guardrails-for-confidential-data): filenames visible, contents not.
 
-#### A literature pipeline
+#### 6. A literature pipeline
 
 PDFs become Markdown, then LaTeX working notes in one folder per paper, named by citation key and written to my summary guidelines (generic version: [`project-template/litrev/GUIDELINES.md`](project-template/litrev/GUIDELINES.md)). Scripts of mine keep the reference manager (Zotero) in sync with the project's `.bib` file and check for newer versions of working papers. Generic versions: [`global/commands/papersummarize.md`](global/commands/papersummarize.md), [`global/commands/zotero.md`](global/commands/zotero.md) and the scripts in [`tools/zotero/`](tools/zotero/).
 
-#### Several sessions working in parallel
+#### 7. Several sessions working in parallel
 
 See [the first subsection of this part](#the-largest-productivity-gain-a-plan-many-sessions-one-manager).
 
-#### Laptop to cluster
+#### 8. Laptop to cluster
 
 Code developed on fake data locally runs on a computing cluster. Long jobs save checkpoints so a kill loses one step, not the run. A watcher script of mine ([`tools/slurm-watch/`](tools/slurm-watch/)) runs as a built-in background command and wakes Claude only when the job finishes or fails, so waiting costs no tokens. The setup (SSH key, host alias, VS Code Remote - SSH) is in [Part 5](#part-5-working-on-a-cluster-from-vs-code).
 
-#### Fresh-eyes reviews
+#### 9. Fresh-eyes reviews
 
 A new subagent (built in) that has not seen my reasoning reads a draft, a proof or a set of results and reports what is wrong. It does not anchor on my conclusions the way the working session does.
 
-#### Onboarding someone else
+#### 10. Onboarding someone else
 
 A starter rules file plus a prompt that merges it into the other person's existing setup: back up first, classify each rule as add, merge, conflict or skip, ask about every conflict, write only after approval, then verify in a fresh session with test questions. This repository is that kit: [`global/CLAUDE.md`](global/CLAUDE.md) and [`prompts/merge-existing-setup.md`](prompts/merge-existing-setup.md).
 
@@ -835,7 +808,9 @@ redirection, scripts) and
 `login.cluster.example.edu` below with your alias, your username and your cluster's
 login address.
 
-**Step 1. Create an SSH key and copy it to the cluster** (once per laptop).
+### Step 1. Create an SSH key and copy it to the cluster
+
+Once per laptop.
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/mycluster_ed25519
@@ -848,8 +823,9 @@ ssh-copy-id -i ~/.ssh/mycluster_ed25519.pub \
 | `ssh-keygen -t ed25519 -f <file>` | Creates a key pair: the private key `<file>` (never leaves the laptop) and the public key `<file>.pub`. It asks for a passphrase: set one; Step 2 stores it in the macOS Keychain so you type it once. |
 | `ssh-copy-id -i <file>.pub <user>@<host>` | Logs in once with your password and appends the public key to `~/.ssh/authorized_keys` on the cluster. Some clusters want the key uploaded through a web portal instead: check their documentation. |
 
-**Step 2. Give the cluster a short alias** in `~/.ssh/config` (create the file if it does
-not exist). Write it yourself: my example settings deny Claude any access to `~/.ssh`.
+### Step 2. Give the cluster a short alias
+
+In `~/.ssh/config` (create the file if it does not exist). Write it yourself: my example settings deny Claude any access to `~/.ssh`.
 
 ```
 Host mycluster
@@ -877,7 +853,9 @@ Check it with `ssh mycluster hostname` (prints the login node's name), then with
 anything; it must print `ok` before Claude can use the cluster, since Claude cannot type
 a password.
 
-**Step 3. Open the cluster in VS Code.** Install Remote - SSH
+### Step 3. Open the cluster in VS Code
+
+Install Remote - SSH
 (`code --install-extension ms-vscode-remote.remote-ssh`). Then Cmd+Shift+P, "Remote-SSH:
 Connect to Host...", and pick `mycluster` (the list comes from `~/.ssh/config`). The
 window reopens connected: the Explorer shows the cluster's files, the integrated terminal
@@ -896,28 +874,33 @@ opens a folder on the cluster.
   scheduler (`sbatch`, `salloc`), never on the login node. Close the remote window when
   you are done.
 
-**Step 4. Decide where Claude runs.** My split:
+### Step 4. Decide where Claude runs
 
-- **Code moves only through git.** I write and test code on the laptop against fake data
-  with the real structure (Part 3, item 7), commit and push; the cluster's copy only
-  pulls. A file edited in both places ends in a conflict, and a run that used an
-  unpushed change cannot be reproduced.
-- **Claude runs on the laptop and drives the cluster over SSH.** Because Step 2 works
-  without a prompt, Claude can run `ssh mycluster 'cd ~/myproject && git pull && sbatch
-  jobs/run.sh'`, read a job's log, and cancel a job, with each command shown to you
-  first. The project's `CLAUDE.md` records the alias, the cluster paths, the
-  environment's interpreter path and the scheduler's partitions, so no session has to
-  rediscover them.
-- **The Remote - SSH window is for looking:** logs, outputs, and files that exist only on
-  the cluster.
-- **Waiting costs nothing.** My example watcher
-  [`tools/slurm-watch`](tools/slurm-watch/) runs as a built-in background command, prints
-  nothing while the job is healthy, and wakes Claude once when it ends or fails
-  (out of memory, stalled, blocked in the queue).
-- Claude Code can also be installed and run on the cluster from the remote terminal. I
-  do not: it would run on a shared login node, with the cluster's data in reach.
+My split:
 
-Two traps. A command sent as `ssh mycluster '<command>'` starts a non-login shell, so
+#### 1. Code moves only through git
+
+I write and test code on the laptop against fake data with the real structure ([Part 3, 7](#7-guardrails-for-confidential-data)), commit and push; the cluster's copy only pulls. A file edited in both places ends in a conflict, and a run that used an unpushed change cannot be reproduced.
+
+#### 2. Claude runs on the laptop and drives the cluster over SSH
+
+Because Step 2 works without a prompt, Claude can run `ssh mycluster 'cd ~/myproject && git pull && sbatch jobs/run.sh'`, read a job's log, and cancel a job, with each command shown to you first. The project's `CLAUDE.md` records the alias, the cluster paths, the environment's interpreter path and the scheduler's partitions, so no session has to rediscover them.
+
+#### 3. The Remote - SSH window is for looking
+
+Logs, outputs, and files that exist only on the cluster.
+
+#### 4. Waiting costs nothing
+
+My example watcher [`tools/slurm-watch`](tools/slurm-watch/) runs as a built-in background command, prints nothing while the job is healthy, and wakes Claude once when it ends or fails (out of memory, stalled, blocked in the queue).
+
+#### 5. Claude Code on the cluster itself
+
+It can also be installed and run on the cluster from the remote terminal. I do not: it would run on a shared login node, with the cluster's data in reach.
+
+### Two traps
+
+A command sent as `ssh mycluster '<command>'` starts a non-login shell, so
 modules and conda environments loaded in your login files may be missing: call the
 interpreter by its full path (`~/micromamba/envs/myenv/bin/python`) or wrap the command
 in `bash -lc '...'`. And a cluster usually has several login nodes behind one address: a
@@ -930,20 +913,21 @@ in `bash -lc '...'`. And a cluster usually has several login nodes behind one ad
 
 I keep Wolfram Language work in two kinds of files, and Claude edits only one of them.
 
-- **Package and script files (`.wl`, `.wls`, `.wlt`) hold everything that must be
-  right:** the model, the solver, the tests and batch runs. They are plain text, so
-  `git diff` shows exactly what changed, and I develop them in VS Code, where Claude can
-  edit them and run them from the terminal with `wolframscript` (it ships with
-  Mathematica).
-- **Notebooks (`.nb`) are for looking:** they load the package with `Get`, then hold a
-  `Manipulate`, a table or a plot. They hold no model code, and I open them in
-  Mathematica.
-- **Claude does not hand-edit a `.nb` file.** A notebook is a nested box expression with
-  cached output, so its diffs are unreadable and a small edit can corrupt it. When a
-  notebook should be maintained by Claude, a short `.wls` script generates it (checking
-  each input cell with `SyntaxQ`) and saves it without outputs.
+### 1. Package and script files (`.wl`, `.wls`, `.wlt`) hold everything that must be right
 
-**Setup.** Install the Wolfram Language extension by Wolfram Research
+The model, the solver, the tests and batch runs. They are plain text, so `git diff` shows exactly what changed, and I develop them in VS Code, where Claude can edit them and run them from the terminal with `wolframscript` (it ships with Mathematica).
+
+### 2. Notebooks (`.nb`) are for looking
+
+They load the package with `Get`, then hold a `Manipulate`, a table or a plot. They hold no model code, and I open them in Mathematica.
+
+### 3. Claude does not hand-edit a `.nb` file
+
+A notebook is a nested box expression with cached output, so its diffs are unreadable and a small edit can corrupt it. When a notebook should be maintained by Claude, a short `.wls` script generates it (checking each input cell with `SyntaxQ`) and saves it without outputs.
+
+### Setup
+
+Install the Wolfram Language extension by Wolfram Research
 (`code --install-extension wolframresearch.wolfram`) for syntax highlighting and a
 language server on `.wl`, `.wls` and `.wlt` files, and point it at your kernel in VS
 Code's `settings.json`:
@@ -952,7 +936,7 @@ Code's `settings.json`:
 "wolfram.systemKernel": "/Applications/Mathematica.app/Contents/MacOS/WolframKernel"
 ```
 
-**The loop with Claude.**
+### The loop with Claude
 
 1. Ask Claude to change the model in `src/`.
 2. Claude runs the tests in the terminal (`wolframscript -file tests/run.wls`) and reads
@@ -961,7 +945,8 @@ Code's `settings.json`:
    and loads the package again) and look at the figures yourself.
 4. Long runs go in a `.wls` script that writes to `results/`, not in the notebook.
 
-**A minimal working example:**
+### A minimal working example
+
 [`examples/mathematica-household/`](examples/mathematica-household/). A couple splits
 its time between market work and home production; a gender-role bias parameter adds a
 utility cost when the wife earns more than the husband, so the response of each spouse's

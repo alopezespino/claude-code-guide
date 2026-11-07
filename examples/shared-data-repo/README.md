@@ -49,8 +49,22 @@ git submodule update --init
 
 ## Day to day
 
-- **Take a newer version on purpose.** `git submodule update --remote base-data`, rerun the project's pipeline, compare the results, then `git add base-data` and commit with the reason (`base-data: bump to <commit>, fixes duplicate units`). Until then the project keeps the version it recorded.
-- **Fix the shared code in the shared repository.** A fix to the baseline is made once, in `base-data` (a branch there, pushed to its remote), and reaches each project when that project bumps its submodule. Never patch a project's copy of the submodule without pushing the change back: it would exist in one project only.
-- **Keep project-specific work out of the shared repository.** Filters, samples, variables only one paper needs and its analysis live in the project. The shared repository holds what every project agrees on.
-- **Record the version in the outputs.** The fingerprint carries the commit the baseline was built from, and each project logs it next to its own results, so any table can be traced to the baseline that produced it.
-- **Build once where the data live.** When the baseline is large, build it on the machine that holds the raw data (a server or a cluster) and point `BASE_DATA_OUT` to a shared folder there; projects read it from that path.
+### 1. Take a newer version on purpose
+
+`git submodule update --remote base-data`, rerun the project's pipeline, compare the results, then `git add base-data` and commit with the reason (`base-data: bump to <commit>, fixes duplicate units`). Until then the project keeps the version it recorded.
+
+### 2. Fix the shared code in the shared repository
+
+A fix to the baseline is made once, in `base-data` (a branch there, pushed to its remote), and reaches each project when that project bumps its submodule. Never patch a project's copy of the submodule without pushing the change back: it would exist in one project only.
+
+### 3. Keep project-specific work out of the shared repository
+
+Filters, samples, variables only one paper needs and its analysis live in the project. The shared repository holds what every project agrees on.
+
+### 4. Record the version in the outputs
+
+The fingerprint carries the commit the baseline was built from, and each project logs it next to its own results, so any table can be traced to the baseline that produced it.
+
+### 5. Build once where the data live
+
+When the baseline is large, build it on the machine that holds the raw data (a server or a cluster) and point `BASE_DATA_OUT` to a shared folder there; projects read it from that path.
