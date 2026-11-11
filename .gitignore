@@ -3,7 +3,6 @@ __pycache__/
 *.pyc
 
 # briefr: private records (link to ~/Documents/project-management)
-manager
 .monitor/
 
 # admin/ layout (2026-11-11): debriefr voice folders and the briefr records
