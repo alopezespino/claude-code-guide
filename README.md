@@ -71,6 +71,7 @@ Zotero) are named as such.
 claude-code-guide/
 ├── README.md                    this guide
 ├── LICENSE                      MIT
+├── admin/                       private working folder of the maintainer, never committed (ignored)
 ├── scripts/
 │   ├── preflight.sh             reports which tools are installed (read-only)
 │   ├── install-global.sh        copies global/ into ~/.claude, never overwrites
@@ -105,6 +106,8 @@ claude-code-guide/
 │   │   └── lessons.md           numbered lessons log
 │   ├── litrev/GUIDELINES.md     standard for paper summaries
 │   └── style/writing-style.md   writing-style guide skeleton
+├── docs/
+│   └── delegating-to-agents.md  how to hand work to subagents and other sessions
 ├── prompts/
 │   ├── build-style-guide.md     derive your style guide from your own writing
 │   ├── merge-existing-setup.md  merge these files into an existing ~/.claude

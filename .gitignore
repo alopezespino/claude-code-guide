@@ -8,3 +8,7 @@ __pycache__/
 # admin/ is local only (layout v2, R4, 2026-11-21): the briefr records link
 # admin/manager, debriefr voice folders, email, drafts
 /admin/
+
+# scratch and private results (layout v2, R9, R10)
+/temp/
+/work/
