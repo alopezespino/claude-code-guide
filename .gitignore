@@ -2,11 +2,11 @@
 __pycache__/
 *.pyc
 
-# briefr: private records (link to ~/Documents/project-management)
+# local tool state, not tracked
 .monitor/
 
-# admin/ is local only (layout v2, R4, 2026-11-21): the briefr records link
-# admin/manager, debriefr voice folders, email, drafts
+# admin/ is local only: private folders such as email, message drafts and
+# the link to private records
 /admin/
 
 # scratch and private results (layout v2, R9, R10)
