@@ -36,7 +36,7 @@ never starts, a run that is alive but has stopped making progress.
 
 ```bash
 mkdir -p ~/.claude/bin
-cp tools/slurm-watch/slurm-watch ~/.claude/bin/
+cp code/utilities/slurm-watch/slurm-watch ~/.claude/bin/
 chmod +x ~/.claude/bin/slurm-watch
 # optional: the default cluster, so --host can be omitted
 echo 'export SLURM_WATCH_HOST=mycluster' >> ~/.bashrc
@@ -45,9 +45,9 @@ echo 'export SLURM_WATCH_HOST=mycluster' >> ~/.bashrc
 Check it locally, without a cluster:
 
 ```bash
-tools/slurm-watch/tests/blocked.sh   # BLOCKED decision, 9 cases
-tools/slurm-watch/tests/watch.sh     # every event, fake ssh and Slurm, ~1 min
-tools/slurm-watch/tests/hook.sh      # the optional hook below
+code/utilities/slurm-watch/tests/blocked.sh   # BLOCKED decision, 9 cases
+code/utilities/slurm-watch/tests/watch.sh     # every event, fake ssh and Slurm, ~1 min
+code/utilities/slurm-watch/tests/hook.sh      # the optional hook below
 ```
 
 ## Usage

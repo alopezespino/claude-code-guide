@@ -29,7 +29,7 @@ use); that page also shows your numeric user id. Better BibTeX is optional.
    `Zotero-API-Key` and `Zotero-API-Version: 3`). Run helper scripts with
    `~/.venvs/zotero/bin/python` (or the interpreter CLAUDE.md names), and write them to
    a temporary folder, not into the project. For `meta` and `papers`, and to sync the
-   index, prefer the example scripts in this guide's `tools/zotero/` (see its
+   index, prefer the example scripts in this guide's `code/utilities/zotero/` (see its
    README), always with `--dry-run` first.
 2. Read the key and the id inside the script at the moment of use:
    `security find-generic-password -s zotero_api_key -w` (same for `zotero_user_id`).

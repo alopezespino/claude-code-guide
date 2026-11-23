@@ -17,7 +17,7 @@ fit your library.
 
 ```bash
 python3 -m venv ~/.venvs/zotero
-~/.venvs/zotero/bin/pip install -r tools/zotero/requirements.txt
+~/.venvs/zotero/bin/pip install -r code/utilities/zotero/requirements.txt
 security add-generic-password -a "$USER" -s zotero_api_key -w
 security add-generic-password -a "$USER" -s zotero_user_id -w
 ```
@@ -33,7 +33,7 @@ logs and child processes, so use them only where there is no Keychain.
 Run the scripts from the project folder, so the relative paths below land there:
 
 ```bash
-~/.venvs/zotero/bin/python /path/to/claude-code-guide/tools/zotero/zotero_api.py \
+~/.venvs/zotero/bin/python /path/to/claude-code-guide/code/utilities/zotero/zotero_api.py \
   sync-index
 ```
 
@@ -81,7 +81,7 @@ a group library instead of your personal one.
 ## Examples
 
 `python` below means `~/.venvs/zotero/bin/python`, run from the
-`tools/zotero` folder or with the full path to each script.
+`code/utilities/zotero` folder or with the full path to each script.
 
 Update the index (incremental; `--full` rebuilds it):
 
